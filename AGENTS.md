@@ -38,7 +38,7 @@
 ## 每个改动都守
 
 - 网络请求包在 `CenterThreadPool.run { }` 里。
-- **小步提交**：改动切成能独立验证的小步（`assembleDebug` + 相关单测通过）再做下一步，别一次堆大量改动。**做完自己 commit + push 到 `main`**，不等催；commit message 与 co-author 格式见 `docs/agents/workflow.md`。
+- **小步提交**：改动切成能独立验证的小步（`assembleDebug` + 相关单测通过）再做下一步，别一次堆大量改动。**做完自己 commit + push 到 `main`**，不等催；commit message 与 co-author 格式见 `docs/agents/workflow.md`。**例外**：动到私有功能 / 开源边界的改动（新增或搬迁逆向产物、改 `private/` 机制、清公开侧残留）**开分支开发、最后交 PR**，见下一节。
 - **改完必须自测，不许只说"应该没问题"**：涉及播放器 / 网络 / UI 时序的改动装到 MuMu 模拟器（`adb connect 127.0.0.1:7555`）跑一遍，把实测结论写进 `docs/review/fix-progress.md`；纯文案 / 单文件小逻辑跑通 `assembleDebug` + 单测即可（判据见 `docs/agents/workflow.md`）。
 - 用户可见文案一律进 `app/src/main/res/values/strings.xml`（写法与纯函数例外见 `docs/agents/dev-conventions.md`）。
 - 不轻易引入新第三方库；**一切功能优先考虑手表端**，手机等设备只是顺便适配。
@@ -56,6 +56,20 @@
 
 本机还有一份**不公开**的私有功能源码仓库 `zisekongling/BiliTerminal-RE-private`（private）。
 它不属于 GPL 发布内容，也不随公开仓库分发；公开仓库里只有反射门面和条件挂点。
+
+这些是**长期规则，不是一次性的要求**：
+
+- **官方 App 端的东西只留在本地与私有仓库**：所有靠逆向官方客户端 / 官方 H5 得到的实现、
+  接口结论、编码表、字段口径、错误码映射，一律按私有功能处理。
+- **逆向产物不开源**：不许写进公开仓库的代码、测试、注释、文档，也不许写进 issue / PR 标题与描述 /
+  commit message / 回复 / 截图 / 日志。**换个说法提一句同样禁止**。
+- **不许 fork**：GitHub 上 fork 出来的仓库一律公开，拿 fork 存这类东西等于没藏。私有仓库必须是
+  **独立的私有仓**，公开仓只做 upstream 的下游。
+- **私有代码只在发版和本地验证时编译进终端**：没有 `private/` 时公开构建必须与从前完全一致
+  （同代码、同单测、同 APK）。
+- **这类改动先开分支开发、最后交 PR**（`main` 保持随时可发版）；日常小修仍直接推 `main`。
+
+细节：
 
 - **本地位置**：公开仓库根目录下的 `private/`（已 gitignore）。没同步时构建出来就是公开版。
 - **同步**：本机 `python build_tui.py --sync-private`（TUI 里 `P`，行式菜单 `[p]`）；CI 由
