@@ -206,14 +206,22 @@ class DanmakuManager(
                 // 一旦异常逸出会打断该线程，表现就是"弹幕一条都不显示"且没有任何上层报错。
                 try {
                     _state.update { it.copy(isPrepared = true) }
+                    // 补设可见性：`show()` / `hide()` 在 prepare 之前调用时只把意图写进 state，
+                    // 真正作用到 DanmakuView 的这一步必须在这里补。漏掉的话，用户明明已经关掉弹幕，
+                    // 新建的 DanmakuManager（短视频每条一建、长视频切 P 也重建）却按默认可见起播，
+                    // 弹幕照样滚出来 —— 表现就是「点了关闭还是会出弹幕」（反馈 #55 / #78）。
+                    if (!_state.value.isVisible) {
+                        try {
+                            danmakuView.hide()
+                        } catch (e: Exception) {
+                            Logu.e("弹幕", "prepared 补设隐藏失败: ${e.message}")
+                        }
+                    }
                     // 补设倍速：`DanmakuView.setSpeed` 有 `handler.isPrepared()` 守卫，
                     // 播放器的 onPrepared 往往早于 DFM 的 prepared（DFM 是异步 prepare），
                     // 那一次调用会被直接丢弃 → 弹幕时钟永远按 1.0x 走。
                     // 3x 播放时 MediaClockSync 的步进补偿就失效了（见 §7.51）。
                     pendingSpeed?.let { danmakuView.setSpeed(it) }
-                    // 补设隐藏：hide() 在 prepare 完成前调用只会记下 isVisible=false 就返回
-                    // （有 isPrepared 守卫），这里不补，「默认关弹幕」开播后弹幕照样出来（反馈 #55）。
-                    if (!_state.value.isVisible) danmakuView.hide()
                     addDanmaku(UiText.of("弹幕准备完毕"), Color.WHITE)
                     // 数据就绪：只有「此刻真的在播」或「没绑媒体时钟（直播）」才启动渲染循环。
                     // 暂停中启动会让用户手动暂停的弹幕被重新拉起（见 configureAndPrepare 的注释）。

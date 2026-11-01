@@ -5,6 +5,10 @@ import com.RobinNotBad.BiliClient.util.UiText
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -68,8 +72,6 @@ import com.RobinNotBad.BiliClient.player.IjkNativeLibs
 import com.RobinNotBad.BiliClient.player.PlayerDefaults
 import com.RobinNotBad.BiliClient.player.LocalAudioTrackPolicy
 import com.RobinNotBad.BiliClient.player.PlayerSurfaceBinder
-import com.RobinNotBad.BiliClient.player.PlayerStreamPolicy
-import com.RobinNotBad.BiliClient.player.QualityAccessPolicy
 import com.RobinNotBad.BiliClient.player.PlayerVolumePolicy
 import com.RobinNotBad.BiliClient.player.SkipCancelPolicy
 import com.RobinNotBad.BiliClient.player.SkipOpEdPrefs
@@ -84,7 +86,6 @@ import com.RobinNotBad.BiliClient.util.CookieDomainPolicy
 import com.RobinNotBad.BiliClient.util.DisguiseGesture
 import com.RobinNotBad.BiliClient.util.DisguisePrefs
 import com.RobinNotBad.BiliClient.util.LocalVideoProgress
-import com.RobinNotBad.BiliClient.util.AccountStateStore
 import com.RobinNotBad.BiliClient.util.Logu
 import com.RobinNotBad.BiliClient.util.MsgUtil
 import com.RobinNotBad.BiliClient.util.NetWorkUtil
@@ -238,56 +239,8 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
     private var pendingFinish = false
     private var isAudioOnlyMode = false
     private var isLocalAudioFile = false
-    private var audioTrackUrl: String? = null // DASH外部音频轨道（本地双文件路径或在线 DASH 音轨 URL）
+    private var audioTrackUrl: String? = null // DASH外部音频轨道
     private var audioPlayer: android.media.MediaPlayer? = null // 外部音频播放器
-
-    /**
-     * 账号状态（登录 / 大会员），决定清晰度列表里哪些档位要上锁。
-     *
-     * `null` 表示还没查到，此时用本地缓存兜底（见 [com.RobinNotBad.BiliClient.util.AccountStateStore.cached]）。
-     * 只用于界面展示与点击拦截：真正的发流权限在服务端。
-     */
-    private var accountState: AccountStateStore.State? = null
-
-    /** 账号状态是否正在后台补查（避免每次弹面板都重复请求）。 */
-    private var accountStateRefreshing = false
-
-    /** 当前清晰度列表的 adapter，账号状态后到时要就地把锁态刷上去。 */
-    private var qualityAdapter: QualitySelectorAdapter? = null
-
-    /**
-     * 外部音轨是否已经 `onPrepared`。
-     *
-     * 远程音轨走 `prepareAsync`，在它就绪前 `currentPosition` 固定是 0；此时
-     * `progressChange` 的偏差校正会拿它跟视频位置比，误判成"漂移"并 `seekTo`。
-     * 对还没 prepared 的 MediaPlayer 调 seekTo 会直接以 `INVALID_OPERATION`(-38)
-     * 触发 `onError`，把刚切好的 1080P 音轨判死（实测就是这样被踢回 720P 的）。
-     */
-    private var audioTrackPrepared = false
-
-    /**
-     * 外部音轨的「稳定偏差基线」与是否已采样。
-     *
-     * 见 [progressChange] 里的说明：两路时钟基准天然差一截（模拟器上稳定 ~850ms），
-     * 只纠正偏离基线的部分，避免固定偏差把音轨每几秒 seek 一次。
-     */
-    private var audioDriftBaseline = 0
-    private var audioDriftSampled = false
-
-    /**
-     * 在线 DASH 音轨加载失败后只回退一次：回退本身就是 `applyQuality(720P)`，
-     * 再次失败若还往回退就会无限重进 720P（播放器反复重建）。
-     */
-    private var dashAudioFallbackInFlight = false
-
-    /**
-     * 在线 DASH 音轨失败后的重试次数（每次切清晰度清零）。
-     *
-     * 实测（模拟器 Android 14）切清晰度时旧的合一 MP4 音轨刚被释放，MediaPlayer 立刻起播
-     * 会拿到 `INVALID_OPERATION`(-38)；隔一会儿再起一次就能成功。所以先重试，别急着回退
-     * 720P——否则用户刚点 1080P 就被自动踢回低清，观感就是"根本切不了"。
-     */
-    private var dashAudioRetryCount = 0
 
     /**
      * 外部音频轨道的「seek 冷却截止时刻」（`SystemClock.elapsedRealtime()`）。
@@ -297,19 +250,7 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
      */
     private var audioResyncSuppressMs: Long = 0L
 
-    /**
-     * 是否正处在「长按三倍速」期间。
-     *
-     * 长按加速不改滑条档位，但它是**真的在变速**：倍速值统一由 [effectiveSpeedValue] 提供，
-     * 各路（滑条、长按、重建后的 [onPrepared]）都走 [applySpeedFromSeekbar] 下发，
-     * 避免"滑条显示 1x、实际还在 3x"这种隐性不一致。松手回到滑条档位。
-     */
-    private var longPressBoostActive = false
-
     companion object {
-        /** 长按加速的倍速值（与滑条档位无关，松手即恢复） */
-        private const val LONG_PRESS_BOOST_SPEED = 3.0F
-
         /** `onSaveInstanceState` 保存的播放位置（毫秒），用于系统重建本页后回到原位 */
         private const val STATE_POSITION = "player_state_position"
 
@@ -325,17 +266,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
          * 冷却太短仍会在 seek 落地前触发二次校正（重复 seek 造成可闻停顿）。
          */
         private const val AUDIO_RESYNC_COOLDOWN_MS = 1_200L
-
-        /** 在线 DASH 音轨失败后的重试上限（每次切清晰度/重新载入都归零）。 */
-        private const val MAX_DASH_AUDIO_RETRY = 1
-
-        /**
-         * 在线 DASH 音轨重试的等待时长。
-         *
-         * 切清晰度时旧音轨的 `AudioTrack` 还在异步拆掉，立刻重建会撞上 `INVALID_OPERATION`；
-         * 600ms 足够让底层音频通路释放干净，又短到用户感知不到卡顿。
-         */
-        private const val DASH_AUDIO_RETRY_DELAY_MS = 600L
 
         /**
          * 弹幕时钟偏差超过这个值就认为"媒体时钟没接上"（体检日志的判据）。
@@ -381,6 +311,14 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
          */
         private const val SUBTITLE_MARGIN_BOTTOM_CONTROLBAR_DP = 76f
         private const val SUBTITLE_MARGIN_BOTTOM_COLLAPSED_DP = 17f
+
+        /**
+         * 媒体控件通知 ID。1027 下载 / 1028 后台播放 / 1029 新消息 / 1030 追番更新已占用，勿改。
+         */
+        private const val NOTIFY_ID_MEDIA_CONTROL = 1031
+
+        /** 媒体控件通知的渠道 ID；渠道名取 strings.xml 的 channel_media_control（「音乐播放」）。 */
+        private const val CHANNEL_MEDIA_CONTROL = "channel_media_control"
     }
 
     @Volatile // 被 PlaybackService 定时线程读（serviceDurationMs）
@@ -460,7 +398,7 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
     private var loop_enabled: Boolean = false
     private var auto_next_enabled = false
 
-    // ---- 位置停滞看门狗（弱网，见 docs/archive/superpowers/specs/2026-10-11-player-network-resilience.md 的 P0-3）----
+    // ---- 位置停滞看门狗（弱网，见 docs/superpowers/specs/2026-10-11-player-network-resilience.md 的 P0-3）----
     // IJK 没有任何"位置 N 秒不前进"的看门狗：弱网下连接可能还在、但一个字节都不来，
     // 于是既不回调 onError、也不走 onCompletion，界面永远停在转圈上（用户看到的就是"卡死"）。
     // 这里复用已有的 250ms 主线程定时器做判定：位置长时间不动 → 自动重连。
@@ -761,13 +699,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
             currentQuality = intent.getIntExtra("currentQuality", SharedPreferencesUtil.getInt(SettingsKeys.PLAY_QN, 16))
         }
 
-        // 起播清晰度按账号权限夹紧：设置里可能选了 4K/1080P60，但没登录或不是大会员时
-        // 请求会被服务端降级，不夹紧的话清晰度面板会把「播不了的那档」显示成当前档。
-        // 这里只用缓存判断（不查网络），大会员第一次开播最多先按 1080P 起，随后 refresh 会纠正。
-        if (isOnlineVideo) {
-            currentQuality = AccountStateStore.clampQuality(currentQuality)
-        }
-
         isShortVideoMode = intent.getBooleanExtra("isShortVideoMode", false)
 
         return true
@@ -943,9 +874,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                 if (!destroyed && isOnlineVideo && aid > 0 && cid > 0) {
                     loadInteractionVideo()
                 }
-
-                // 提前查账号状态，用户第一次打开清晰度面板时锁态就是准的（失败会退回缓存）
-                refreshAccountStateIfNeeded()
 
                 if (!destroyed) setDisplay()
             }
@@ -1134,9 +1062,15 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                             previousY = event.getY(if (index == 0) 1 else 0)
                         }
                     }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    MotionEvent.ACTION_UP -> {
                         handleSwipeSeekTouch(event)
-                        endLongPressBoost()
+                        if (onLongClick) {
+                            onLongClick = false
+                            val normalSpeed = speed_values[seekbar_speed.progress]
+                            ijkPlayer?.setSpeed(normalSpeed)
+                            danmakuManager?.setSpeed(normalSpeed)
+                            text_speed.text = speed_strs[seekbar_speed.progress]
+                        }
                         if (gesture_moved) gesture_moved = false
                         if (gesture_scaled) gesture_scaled = false
                     }
@@ -1155,10 +1089,12 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                     doubleTapGestureDetector!!.onTouchEvent(motionEvent)
                 }
                 handleSwipeSeekTouch(motionEvent)
-                if (motionEvent.action == MotionEvent.ACTION_UP ||
-                    motionEvent.action == MotionEvent.ACTION_CANCEL
-                ) {
-                    endLongPressBoost()
+                if (motionEvent.action == MotionEvent.ACTION_UP && onLongClick) {
+                    onLongClick = false
+                    val normalSpeed = speed_values[seekbar_speed.progress]
+                    ijkPlayer?.setSpeed(normalSpeed)
+                    danmakuManager?.setSpeed(normalSpeed)
+                    text_speed.text = speed_strs[seekbar_speed.progress]
                 }
                 false
             }
@@ -1172,10 +1108,10 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
             if (SharedPreferencesUtil.getBoolean("player_longclick", true) && ijkPlayer != null && isPlaying && !isLiveMode) {
                 if (!onLongClick && !gesture_click_disabled) {
                     hidecon.run()
-                    longPressBoostActive = true
+                    ijkPlayer?.setSpeed(3.0F)
+                    danmakuManager?.setSpeed(3.0f)
+                    text_speed.text = "x 3.0"
                     onLongClick = true
-                    // 不直接 setSpeed(3f)：统一走倍速下发，长按/滑条/重建后的 onPrepared 都用同一套口径
-                    applySpeedFromSeekbar()
                     Logu.v("gesture", "longclick_down")
                     return@setOnLongClickListener true
                 }
@@ -1501,7 +1437,7 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
             ijkPlayer!!.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 1)
             ijkPlayer!!.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-buffer-size", 15 * 1024 * 1024)
             ijkPlayer!!.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "user_agent", NetWorkUtil.USER_AGENT_WEB)
-            // 弱网韧性（详见 docs/archive/superpowers/specs/2026-10-11-player-network-resilience.md 的 P0-1）：
+            // 弱网韧性（详见 docs/superpowers/specs/2026-10-11-player-network-resilience.md 的 P0-1）：
             // 1) rw_timeout：默认 0 = "读可以永久阻塞"，而且卡住时 IJK 不会回调 onError，
             //    界面上只会一直转圈 —— 这是弱网下直播/长视频"卡死不动"的直接原因；
             // 2) reconnect 只在"某次 read 返回负值"时才生效，而 chunked 直播（is_streamed=1）
@@ -1513,7 +1449,7 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
             ijkPlayer!!.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect_delay_max", 5L)
             // 4) reconnect_at_eof：直播流被服务端"正常收尾"（chunked 响应干净 EOF）时，
             //    ffmpeg 会当成播完了，reconnect/reconnect_streamed 都不会触发。只有直播加这一项
-            //    （spec 的 P0-1 明确要求，见 docs/archive/superpowers/specs/2026-10-11-player-network-resilience.md
+            //    （spec 的 P0-1 明确要求，见 docs/superpowers/specs/2026-10-11-player-network-resilience.md
             //    §1 第 3 条、§4 P0-1）；点播的 EOF 就是真的播完，加了会无限重连，故只放在直播分支。
             if (isLiveMode) {
                 ijkPlayer!!.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect_at_eof", 1L)
@@ -1551,8 +1487,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
     private fun MPPrepare(nowurl: String) {
         // 重载期间不能让上一轮的外部音频继续出声；onPrepared 会按新媒体轨道重新选择。
         releaseAudioTrack()
-        // 新一轮载入重置 DASH 音轨重试额度，否则上一轮用掉的重试会让这一轮直接回退 720P
-        dashAudioRetryCount = 0
         ijkPlayer!!.setOnPreparedListener(this)
         // 任何一次新的载入（切P / 切清晰度 / 出错重试）都要清掉上一次的错误态，
         // 否则重试后 controlVideo() 仍会认为处于错误态而再次走重新载入分支。
@@ -1750,29 +1684,11 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
      */
     private fun applySpeedFromSeekbar() {
         val index = seekbar_speed.progress.coerceIn(0, speed_values.size - 1)
-        val speed = effectiveSpeedValue()
-        // 长按加速期间控件已隐藏，文案直接显示 3x；松手后再回到滑条档位
-        text_speed.text = if (longPressBoostActive) boostLabel() else speed_strs[index]
+        text_speed.text = speed_strs[index]
         text_newspeed.text = speed_strs[index]
-        ijkPlayer?.setSpeed(speed)
-        danmakuManager?.setSpeed(speed)
-        applyAudioSpeed(speed)
+        ijkPlayer?.setSpeed(speed_values[index])
+        danmakuManager?.setSpeed(speed_values[index])
     }
-
-    /** 倍速滑条当前档位对应的倍速值（越界时夹到合法档，避免崩溃）。 */
-    private fun currentSpeedValue(): Float =
-        speed_values[seekbar_speed.progress.coerceIn(0, speed_values.size - 1)]
-
-    /**
-     * 当前**实际生效**的倍速值：长按加速期间是 3x，否则就是滑条档位。
-     *
-     * 下发倍速必须用它——只看滑条的话，长按加速在 DASH 高清片源上会"看起来生效、其实画面照旧 1x"。
-     */
-    private fun effectiveSpeedValue(): Float =
-        if (longPressBoostActive) LONG_PRESS_BOOST_SPEED else currentSpeedValue()
-
-    /** 长按加速时显示在倍速文案上的字符串（`x 3.0`）。 */
-    private fun boostLabel(): String = "x ${LONG_PRESS_BOOST_SPEED}"
 
     private fun changeVideoSize() {
         if (!isPrepared || ijkPlayer == null) return
@@ -1836,26 +1752,11 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                     // 还停在旧位置，这时再校正等于同一位置 seek 两遍（用户听到的就是停顿两次）。
                     val nowElapsed = android.os.SystemClock.elapsedRealtime()
                     audioPlayer?.let { ap ->
-                        if (audioTrackPrepared && nowElapsed >= audioResyncSuppressMs) {
+                        if (nowElapsed >= audioResyncSuppressMs) {
                             try {
                                 val audioPos = ap.currentPosition
-                                // 只纠「还在变大」的漂移，不纠固定偏差：
-                                // 两路各自的时钟基准本就差一截（模拟器上稳定差 ~850ms，视频渲染慢），
-                                // 拿绝对偏差当判据会每 2~5 秒 seek 一次音轨（听感是持续一顿一顿）。
-                                // 首次采样把当前偏差记成基线，之后只有偏离基线超过阈值才对齐。
-                                val drift = audioPos - video_now
-                                if (!audioDriftSampled) {
-                                    audioDriftSampled = true
-                                    audioDriftBaseline = drift
-                                } else if (audioPos >= 0 && Math.abs(drift - audioDriftBaseline) > 800) {
+                                if (audioPos >= 0 && Math.abs(audioPos - video_now) > 800) {
                                     ap.seekTo(video_now)
-                                    // 重新采样：seek 落地后偏差要重新算基线
-                                    audioDriftSampled = false
-                                    // 并进冷却期：MediaPlayer.seekTo 是异步的，seek 未完成时
-                                    // currentPosition 还报旧值，下一拍再判就会把「seek 没生效」
-                                    // 当成新的漂移，连着 seek 三下（模拟器实测 1x 下就冒出 3 连 seek，
-                                    // 听感是音频连跳三下）。冷却期沿用拖动 seek 的同一套常量。
-                                    audioResyncSuppressMs = nowElapsed + AUDIO_RESYNC_COOLDOWN_MS
                                     Logu.d("AudioTrack", "音频轨道重新同步: $audioPos -> $video_now")
                                 }
                             } catch (_: Exception) {}
@@ -2938,21 +2839,23 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
         liveWebSocket = null
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && mediaSession != null) {
+            // 先撤媒体控件通知再释放会话：通知是按会话令牌配对的，会话没了通知必须跟着走，
+            // 否则会留下一张点不动的「僵尸」媒体卡片，还可能被系统按渠道再次误归类
+            (getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)
+                ?.cancel(NOTIFY_ID_MEDIA_CONTROL)
             mediaSession!!.release()
             mediaSession = null
         }
 
-        // 退出播放器时把方向锁回设置里的默认值。**必须包 try/catch**：
-        // 「Only fullscreen activities can request orientation」是 Android 8.0 的已知行为——
-        // 页面不在全屏（分屏 / 悬浮窗 / 某些 ROM 的窗口化）时 setRequestedOrientation 抛 ISE，
-        // 而这里是 onDestroy，异常会升级成 "Unable to destroy activity" 直接崩在退出路径上。
-        // 线上实测 4 例，全部是 sdk 26 的 HONOR HWDUK。
+        // onDestroy 阶段改方向是「非全屏 activity 请求方向」/窗口已销毁的经典崩点
+        // （崩溃类 6：IllegalStateException / "Unable to destroy activity"）。
+        // 这里只要求还原屏幕方向、失败无所谓，绝不能让它把 onDestroy 剩下的清理全跳过。
         try {
             requestedOrientation = if (SharedPreferencesUtil.getBoolean("ui_landscape", false))
                 ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        } catch (ignored: IllegalStateException) {
-            Logu.w("退出时恢复屏幕方向失败（非全屏窗口），忽略")
+        } catch (e: Exception) {
+            Logu.e("PlayerActivity", "还原屏幕方向失败：${e.message}")
         }
 
         super.onDestroy()
@@ -3043,6 +2946,21 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
     @SuppressLint("WrongConstant")
     private fun initMediaSession() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
+        // 媒体控件通知的渠道在这里建好（幂等）；通知本身等 onPrepared 元数据齐了再挂，
+        // 见 postMediaControlNotification。
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notifyManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val channel = NotificationChannel(
+                CHANNEL_MEDIA_CONTROL,
+                getString(R.string.channel_media_control),
+                NotificationManager.IMPORTANCE_LOW
+            )
+            channel.description = getString(R.string.channel_media_control_desc)
+            channel.setShowBadge(false)
+            channel.setSound(null, null)
+            channel.enableVibration(false)
+            notifyManager.createNotificationChannel(channel)
+        }
         mediaSession = MediaSession(this, "BiliClientPlayer")
         mediaSession!!.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
         mediaSession!!.setCallback(object : MediaSession.Callback() {
@@ -3101,6 +3019,8 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
         if (videoTitle != null) metadataBuilder.putString(MediaMetadata.METADATA_KEY_TITLE, videoTitle)
         if (video_all > 0) metadataBuilder.putLong(MediaMetadata.METADATA_KEY_DURATION, video_all.toLong())
         mediaSession!!.setMetadata(metadataBuilder.build())
+        // 元数据齐了才挂媒体控件通知：它按会话令牌配对，是手表系统给媒体控件归类的依据
+        postMediaControlNotification()
     }
 
     private fun updateMediaSessionPlaybackState() {
@@ -3124,6 +3044,55 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
             .setState(state, position, 1.0f)
             .setActions(actions)
         mediaSession!!.setPlaybackState(stateBuilder.build())
+    }
+
+    /**
+     * 挂上带 [Notification.MediaStyle] 的媒体控件通知。
+     *
+     * <h3>为什么要补这条通知</h3>
+     * 本页的 [MediaSession] 此前从未绑定过任何通知。手表系统给媒体控件归类时，
+     * 找不到会话专属的媒体通知，就按应用当时挂着的那条通知取渠道——正在下载的机器上
+     * 挂着的是「下载」渠道，控件于是被识别成「下载」而不是播放。补一条 MediaStyle +
+     * 会话令牌的常驻通知后，系统有了明确的配对对象（Android 11+ 的媒体卡片也要求
+     * 这条通知才会显示会话）。渠道名取「音乐播放」、分类取 CATEGORY_TRANSPORT，
+     * 双保险对齐系统的媒体归类。
+     *
+     * <p>只在元数据变化时重发（onPrepared、切 P、换清晰度、出错重建）；
+     * 播放中每秒一次的 [updateMediaSessionPlaybackState] 不碰通知，避免 Binder 风暴。
+     * 进度由 PlaybackState 提供，通知上不放进度条。
+     */
+    private fun postMediaControlNotification() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || mediaSession == null) return
+        val notifyManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            Notification.Builder(this, CHANNEL_MEDIA_CONTROL)
+        else
+            Notification.Builder(this)
+        // 与 PlaybackService 的通知同款：REORDER_TO_FRONT 复用已有播放页实例
+        val contentIntent = PendingIntent.getActivity(
+            this, 0,
+            (packageManager.getLaunchIntentForPackage(packageName)
+                ?: Intent(this, PlayerActivity::class.java))
+                .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        builder.setContentTitle(videoTitle?.takeIf { it.isNotBlank() } ?: getString(R.string.uitext_playbackservice_004))
+            .setSmallIcon(R.mipmap.icon)
+            .setContentIntent(contentIntent)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setShowWhen(false)
+            .setCategory(Notification.CATEGORY_TRANSPORT)
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+            builder.setPriority(Notification.PRIORITY_LOW)
+        builder.setStyle(Notification.MediaStyle().setMediaSession(mediaSession!!.sessionToken))
+        try {
+            notifyManager.notify(NOTIFY_ID_MEDIA_CONTROL, builder.build())
+        } catch (e: Exception) {
+            // 通知只是媒体控件的载体，挂不上不该影响播放
+            Logu.e("媒体通知", e.message ?: "挂媒体控件通知失败")
+        }
     }
 
     private fun initUI() {
@@ -3322,7 +3291,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                     text_speed.text = speed_strs[position]
                     ijkPlayer?.setSpeed(speed_values[position])
                     danmakuManager?.setSpeed(speed_values[position])
-                    applyAudioSpeed(speed_values[position])
                     // 「播放默认值 → 倍速 = 沿用上次」的记录位：只有用户自己调过才算"上次用过的"。
                     SharedPreferencesUtil.putFloat(SettingsKeys.PLAYER_LAST_SPEED, speed_values[position])
                 }
@@ -3422,8 +3390,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
             // seek 的冷却期内 progressChange 不再校正音频：MediaPlayer.seekTo 异步，
             // seek 未完成时 currentPosition 还停在旧位置，这时再校正等于同一位置 seek 两遍。
             audioResyncSuppressMs = android.os.SystemClock.elapsedRealtime() + AUDIO_RESYNC_COOLDOWN_MS
-            // 拖动后偏差基线作废，冷却结束后重新采样（否则旧基线会把正常位置当漂移再 seek 一次）
-            audioDriftSampled = false
         }
     }
 
@@ -3557,15 +3523,14 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
 
     /**
      * 左右滑动控制进度（横向滑动快进/快退）。返回 true 表示事件已被滑动进度消费。
-     * 仅在开启设置、未缩放视频、非直播、已准备就绪且**没有按住长按三倍速**时生效。
+     * 仅在开启设置、未缩放视频、非直播且已准备就绪时生效。
      */
     private fun handleSwipeSeekTouch(event: MotionEvent): Boolean {
         // 缩放状态取画面的实际比例，不读 gesture_scaled（那个标志在 ACTION_UP 就复位，
         // 捏合放大松手后会把调进度重新放行——26.10.20 修的正是这个）。
-        // 长按三倍速期间同理：按住时不消费横滑，松手（含 ACTION_CANCEL）后自动恢复。
         val seekAllowed = PlayerSwipeSeekPolicy.isSeekAllowed(
             swipeSeekEnabled, isPrepared, isLiveMode, ijkPlayer != null,
-            layout_video.scaleX, layout_video.scaleY, onLongClick
+            layout_video.scaleX, layout_video.scaleY
         )
         if (!seekAllowed) {
             // 门闸关闭时顺手收掉可能残留的浮层：横滑激活浮层后再捏合缩放，最终 ACTION_UP 会走到
@@ -3621,23 +3586,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
         return false
     }
 
-    /**
-     * 结束长按三倍速，恢复用户选中的倍速与文案。
-     *
-     * **ACTION_UP 与 ACTION_CANCEL 都要调用**：长按加速期间横滑不再消费（见 [PlayerSwipeSeekPolicy]
-     * 的 longPressBoost 门闸），若触摸被父容器/失焦 CANCEL 后 `onLongClick` 卡在 true，
-     * 滑动调进度会被永久拦掉、播放速度也停在 3 倍。
-     *
-     * 走 [applySpeedFromSeekbar] 而不是直接下发：长按/滑条/重建后的 onPrepared 都用同一套
-     * 「有效倍速」口径（见 [effectiveSpeedValue]），松手就回到滑条档位。
-     */
-    private fun endLongPressBoost() {
-        if (!onLongClick) return
-        onLongClick = false
-        longPressBoostActive = false
-        applySpeedFromSeekbar()
-    }
-
     /** 收掉可能残留的滑动进度浮层；浮层与标志都不存在时不动 UI。 */
     private fun cancelSwipeSeekIfActive() {
         if (!swipeSeekActive && swipe_seek_overlay.visibility != View.VISIBLE) return
@@ -3657,8 +3605,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
     private fun releaseAudioTrack() {
         val previous = audioPlayer
         audioPlayer = null
-        audioTrackPrepared = false
-        audioDriftSampled = false
         try {
             previous?.release()
         } catch (e: Exception) {
@@ -3673,12 +3619,6 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
     private fun initAudioTrack(mediaPlayer: IMediaPlayer) {
         releaseAudioTrack()
         val url = audioTrackUrl?.takeIf { it.isNotBlank() } ?: return
-        // 在线 DASH 是音视频分离的：音轨是网络流，必须带 Referer/Cookie 异步加载，走下面那条远程分支。
-        // 本地缓存/下载的双文件仍然是文件路径，继续走原来的"确认主文件没有内嵌音轨"逻辑。
-        if (PlayerStreamPolicy.isRemoteAudioTrack(url)) {
-            initRemoteAudioTrack(url)
-            return
-        }
         val audioFile = File(url)
         val fileUsable = audioFile.isFile && audioFile.canRead() && audioFile.length() > 0L
         val tracks = if (!isOnlineVideo && !isLiveMode && fileUsable) {
@@ -3727,140 +3667,13 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
             }
             player.setDataSource(url)
             player.prepare()
-            audioTrackPrepared = true
             if (isPrepared) player.seekTo(video_now)
             player.isLooping = false
-            applyAudioSpeed(speed_values[seekbar_speed.progress.coerceIn(0, speed_values.size - 1)])
             if (isPlaying) player.start()
             Logu.d("AudioTrack", "已启用唯一的外部音频轨道")
         } catch (e: Exception) {
             Logu.e("AudioTrack", "音频轨道初始化失败: ${e.message}")
             releaseAudioTrack()
-        }
-    }
-
-    /**
-     * 在线 DASH 音轨（1080P 及以上才有的那条纯音频流）。
-     *
-     * 与本地双文件不同，这里不能同步 `prepare()`（网络流会阻塞到首包到达），也不该去读主文件的
-     * trackInfo —— DASH 的视频流本来就没有内嵌音轨。起播位置由 `isPrepared` 决定，
-     * 音量与倍速跟主播放器保持同步，两路的时间偏差由 `progressChange` 的 800ms 校正兜底。
-     */
-    private fun initRemoteAudioTrack(url: String) {
-        if (!isOnlineVideo || isLiveMode) {
-            // 直播没有"第二条音轨"这回事；本地视频也不可能拿到在线音轨 URL
-            Logu.w("AudioTrack", "非在线点播场景忽略远程音轨：$url")
-            return
-        }
-        try {
-            val player = android.media.MediaPlayer()
-            audioPlayer = player
-            player.setOnPreparedListener { mp ->
-                if (audioPlayer !== mp) return@setOnPreparedListener
-                try {
-                    // 先标记已就绪：progressChange 的偏差校正只对 prepared 的音轨生效
-                    // （对 preparing 中的 MediaPlayer seekTo 会触发 -38 直接把音轨判死）
-                    audioTrackPrepared = true
-                    // 起播位置刚 seek 过，偏差基线要重新采样
-                    audioDriftSampled = false
-                    mp.isLooping = false
-                    if (isPrepared) mp.seekTo(video_now)
-                    applyAudioSpeed(speed_values[seekbar_speed.progress.coerceIn(0, speed_values.size - 1)])
-                    if (isPlaying) mp.start() else mp.pause()
-                    applyVolumeGain()
-                    // 刚起播时两路的时间基准不同，先压住偏差校正，避免一上来就互相 seek
-                    audioResyncSuppressMs = android.os.SystemClock.elapsedRealtime() + AUDIO_RESYNC_COOLDOWN_MS
-                    Logu.d("AudioTrack", "在线 DASH 音轨已就绪")
-                } catch (e: Exception) {
-                    Logu.e("AudioTrack", "在线音轨起播失败：${e.message}")
-                    releaseAudioTrack()
-                }
-            }
-            player.setOnErrorListener { failedPlayer, what, extra ->
-                if (audioPlayer === failedPlayer) {
-                    Logu.e("AudioTrack", "在线 DASH 音轨播放失败：$what/$extra")
-                    releaseAudioTrack()
-                    // 先重试一次再回退：切清晰度瞬间旧音轨还在拆，直接重建多半失败
-                    if (retryRemoteAudioTrack(url)) return@setOnErrorListener true
-                    onHighQualityAudioFailed()
-                }
-                true
-            }
-            val headers = mapOf(
-                "Referer" to "https://www.bilibili.com/",
-                "User-Agent" to NetWorkUtil.USER_AGENT_WEB,
-                "Cookie" to SharedPreferencesUtil.getString(SharedPreferencesUtil.cookies, "")
-            )
-            // MediaPlayer 只有 setDataSource(Context, Uri, Map) 这个带请求头的重载：
-            // B 站 CDN 不带 Referer/Cookie 会回 403，所以三样都得给。
-            player.setDataSource(this, android.net.Uri.parse(url), headers)
-            player.prepareAsync()
-        } catch (e: Exception) {
-            Logu.e("AudioTrack", "在线音轨初始化失败：${e.message}")
-            releaseAudioTrack()
-            if (!retryRemoteAudioTrack(url)) onHighQualityAudioFailed()
-        }
-    }
-
-    /**
-     * 在线 DASH 音轨失败后按 [url] 再试一次（同一次切清晰度最多 [MAX_DASH_AUDIO_RETRY] 次）。
-     *
-     * @return true 表示已经排好重试，调用方不要再走回退
-     */
-    private fun retryRemoteAudioTrack(url: String): Boolean {
-        if (dashAudioRetryCount >= MAX_DASH_AUDIO_RETRY) return false
-        dashAudioRetryCount++
-        Logu.w("AudioTrack", "在线 DASH 音轨失败，${DASH_AUDIO_RETRY_DELAY_MS}ms 后重试")
-        layout_control.postDelayed({
-            if (destroyed || isFinishing) return@postDelayed
-            // 期间已经换过音轨（新的成功实例或别的清晰度）就别再插手
-            if (audioPlayer != null || audioTrackUrl != url) return@postDelayed
-            if (currentQuality <= PlayerStreamPolicy.QN_720P) return@postDelayed
-            initRemoteAudioTrack(url)
-        }, DASH_AUDIO_RETRY_DELAY_MS)
-        return true
-    }
-
-    /**
-     * 在线 DASH 音轨加载失败时的兜底：切回 720P 的合一 MP4。
-     *
-     * 不这么做的后果是「有画面没声音」且用户在播放器里无路可走；720P 是唯一能保证音画同源的档位。
-     * 只在当前确实是 DASH 档时回退，并用 [dashAudioFallbackInFlight] 防重入（否则会反复重建播放器）。
-     */
-    private fun onHighQualityAudioFailed() {
-        if (destroyed || isFinishing) return
-        if (dashAudioFallbackInFlight) return
-        if (currentQuality <= PlayerStreamPolicy.QN_720P) return
-        dashAudioFallbackInFlight = true
-        runOnUiThread {
-            if (destroyed || isFinishing) {
-                dashAudioFallbackInFlight = false
-                return@runOnUiThread
-            }
-            MsgUtil.showMsg(UiText.of("高清音轨加载失败，已切回 720P"))
-            applyQuality(PlayerStreamPolicy.QN_720P, false)
-        }
-    }
-
-    /**
-     * 让外部音轨跟主播放器同速。
-     *
-     * 不做的后果：倍速播 1080P 时视频按 1.5x 走、音频还是 1x，`progressChange` 的 800ms 校正
-     * 会不停 seek 音轨，听感是"每个 800ms 顿一下"。`PlaybackParams` 是 API 23 才有的接口，
-     * 更低版本只能靠上面的偏差校正，不做额外处理。
-     *
-     * 主播放器那一路是 DASH 的纯视频流，它能跟着变速是因为随包的 ijkplayer 打了
-     * `ijkpatch/0001-ffplay-video-playback-rate.patch`（无音轨时让 ffplay 按
-     * `pf_playback_rate` 缩放帧间隔）。两路各自按倍速跑之后，残余的时钟漂移由
-     * [progressChange] 的 800ms 基线校正兜底（正常只会在开头对齐时纠一两次）。
-     */
-    private fun applyAudioSpeed(speed: Float) {
-        val player = audioPlayer ?: return
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) return
-        try {
-            player.playbackParams = android.media.PlaybackParams().setSpeed(speed)
-        } catch (e: Exception) {
-            Logu.e("AudioTrack", "设置音轨倍速失败：${e.message}")
         }
     }
 
@@ -4159,16 +3972,12 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
 
                 playerData.title = newTitle
                 playerData.mid = mid
-                playerData.qn = AccountStateStore.clampQuality(
-                    SharedPreferencesUtil.getInt(SettingsKeys.PLAY_QN, 16)
-                )
+                playerData.qn = SharedPreferencesUtil.getInt(SettingsKeys.PLAY_QN, 16)
                 playerData.pagenames = pagenames
                 playerData.cids = cids
                 playerData.currentPageIndex = currentPageIndex
 
-                // 切P同样要按清晰度选接口：走 fnval=1 的话 1080P 会被服务端降级成 720P
-                if (epid != 0L) PlayerApi.getPlaybackBangumi(playerData)
-                else PlayerApi.getPlaybackVideo(playerData)
+                PlayerApi.getVideo(playerData, false)
 
                 runOnUiThread {
                     if (destroyed) return@runOnUiThread
@@ -4182,11 +3991,8 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                     if (playerData.aid > 0) aid = playerData.aid
                     // 在 UI 线程落地"这条能不能进得去"，供选集卡片画那一行（见 enterableCollection）
                     updateEnterable(videoInfoForEnter)
-                    // 第 5 个参数是外部音轨：DASH 1080P+ 的视频流没声音，必须把新P的音轨一起带过去
-                    doSwitchPage(
-                        newTitle, playerData.videoUrl, playerData.danmakuUrl, pageIndex,
-                        playerData.audioUrl?.takeIf { it.isNotBlank() }
-                    )
+                    // 在线切 P 没有外挂音轨（26.10.27 架构下在线取流是合一 MP4），传空即可
+                    doSwitchPage(newTitle, playerData.videoUrl, playerData.danmakuUrl, "", pageIndex)
                 }
             } catch (e: Exception) {
                 runOnUiThread {
@@ -4348,36 +4154,36 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
         // 从 intent 中获取视频文件和弹幕文件列表
         val videoFileList = intent.getStringArrayListExtra("videoFileList") ?: return
         val danmakuFileList = intent.getStringArrayListExtra("danmakuFileList")
+        // 双文件（合并失败/未合并的 DASH）缓存还会带一份与外挂音轨对齐的列表：
+        // 切 P 时必须跟着换，否则新一 P 只剩视频轨、直接没声音（反馈 #51 的另一半）
+        val audioFileList = intent.getStringArrayListExtra("audioFileList")
 
         if (pageIndex < 0 || pageIndex >= videoFileList.size) return
 
         val videoUrl = videoFileList[pageIndex]
         val danmakuUrl = danmakuFileList?.getOrElse(pageIndex) { "" } ?: ""
-        // 文件夹虚拟合集会带上与 videoFileList 对齐的外部音轨（未合并的 DASH 缓存，反馈 #51）
-        val audioUrl = intent.getStringArrayListExtra("audioFileList")
-            ?.getOrElse(pageIndex) { "" }?.takeIf { it.isNotEmpty() }
+        val audioUrl = audioFileList?.getOrElse(pageIndex) { "" } ?: ""
 
         runOnUiThread {
-            doSwitchPage(newTitle, videoUrl, danmakuUrl, pageIndex, audioUrl)
+            doSwitchPage(newTitle, videoUrl, danmakuUrl, audioUrl, pageIndex)
         }
     }
 
     /**
      * 执行分页切换的通用UI操作
-     *
-     * @param newAudioTrackUrl 新分页的外部音轨；在线切P与无音轨的本地文件传 null
      */
     private fun doSwitchPage(
         newTitle: String,
         newVideoUrl: String,
         newDanmakuUrl: String,
-        pageIndex: Int,
-        newAudioTrackUrl: String? = null
+        newAudioTrackUrl: String,
+        pageIndex: Int
     ) {
         if (destroyed) return
 
         releaseAudioTrack()
-        audioTrackUrl = newAudioTrackUrl // 新分页不能继续复用上一页的外部音轨。
+        // 新分页不能继续复用上一页的外部音轨，但要用**本页**的音轨（没有则置空）
+        audioTrackUrl = newAudioTrackUrl.takeIf { it.isNotEmpty() }
         ijkPlayer?.stop()
         ijkPlayer?.release()
         releaseDanmaku()
@@ -4468,151 +4274,48 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
         btn_auto_next.setImageResource(if (auto_next_enabled) R.drawable.icon_auto_next_on else R.drawable.icon_auto_next_off)
     }
 
-    /**
-     * 弹清晰度选择卡片。
-     *
-     * 列表里的档位来自服务端 `accept_quality`，它列的是「视频有哪些清晰度」，**不是当前账号
-     * 有没有权限播**：未登录时 1080P 及以上、非大会员时 1080P60 及以上都只是「看得见点不动」，
-     * 服务端不会报错，只会静默给低一档的流。所以这里按账号状态把它们标成锁定态（复用播放器
-     * 的锁图标，见 [QualitySelectorAdapter.lockedMaxQuality]），点了给提示而不是假装切换。
-     */
     private fun showQualitySelectorCard() {
         if (qnStrList == null || qnValueList == null || qnStrList!!.isEmpty()) {
             MsgUtil.showMsg(UiText.of("清晰度列表未加载"))
             return
         }
 
-        // 先用已知/缓存状态渲染，账号状态还没查到时后台补查（见 refreshAccountStateIfNeeded）
-        val state = accountState ?: AccountStateStore.cached()
-        refreshAccountStateIfNeeded()
-
         runOnUiThread {
             val qualitySelectorRecycler = findViewById<RecyclerView>(R.id.quality_selector_list)
             val adapter = QualitySelectorAdapter()
-            adapter.lockedMaxQuality = QualityAccessPolicy.maxUnlockedQn(state.loggedIn, state.vip)
-            adapter.onLockedItemClickListener = { lockedQuality ->
-                MsgUtil.showMsg(qualityLockedHint(state, lockedQuality))
-                Logu.d(
-                    "QualitySelector",
-                    "锁定档位被点击：qn=$lockedQuality 登录=${state.loggedIn} 大会员=${state.vip}"
-                )
-            }
-            // 服务端对没权限的账号不下发 4K 档（accept_quality 里连 120 都没有），
-            // 这里补一个锁定项，用户才知道开大会员能解锁这一档
-            val displayNames = ArrayList(qnStrList!!.toList())
-            val displayValues = ArrayList<Int>(qnValueList!!.toList())
-            if (QualityAccessPolicy.needsLocked4kHint(displayValues.toIntArray(), state.loggedIn, state.vip)) {
-                displayNames.add(UiText.of("4K 超清"))
-                displayValues.add(QualityAccessPolicy.QN_4K)
-            }
-            adapter.setData(displayNames.toTypedArray(), displayValues.toIntArray(), currentQuality)
+            adapter.setData(qnStrList!!, qnValueList!!, currentQuality)
             adapter.setOnItemClickListener { index ->
                 layout_card_bg.visibility = View.GONE
                 card_quality_selector.visibility = View.GONE
-                if (index >= 0 && index < displayValues.size && displayValues[index] != currentQuality) {
-                    switchQuality(displayValues[index])
+                if (index >= 0 && index < qnValueList!!.size && qnValueList!![index] != currentQuality) {
+                    switchQuality(qnValueList!![index])
                 }
             }
             qualitySelectorRecycler.layoutManager = CustomLinearManager(this, LinearLayoutManager.HORIZONTAL, false)
             qualitySelectorRecycler.adapter = adapter
-            qualityAdapter = adapter
             layout_card_bg.visibility = View.VISIBLE
             card_quality_selector.visibility = View.VISIBLE
         }
     }
 
-    /**
-     * 被锁住的清晰度点了以后该说什么。
-     *
-     * 4K 是大会员专属，不管登没登录都是「开通大会员」这一句；其余按未登录/非大会员分两套口径。
-     */
-    private fun qualityLockedHint(state: AccountStateStore.State, lockedQuality: Int = 0): String = when {
-        lockedQuality >= QualityAccessPolicy.QN_4K -> UiText.of("4K 超清需要开通大会员")
-        !state.loggedIn -> UiText.of("登录后可选择 1080P 及以上的清晰度")
-        else -> UiText.of("开通大会员后可选择 1080P60 帧及以上的清晰度")
-    }
-
-    /**
-     * 后台补查一次账号状态；拿到结果后就地刷新清晰度列表的锁态（不重建列表，保留滚动位置）。
-     *
-     * 失败时 [AccountStateStore.refresh] 会退回缓存，所以这里不用处理异常。
-     */
-    private fun refreshAccountStateIfNeeded() {
-        if (accountState != null || accountStateRefreshing) return
-        accountStateRefreshing = true
-        CenterThreadPool.run {
-            val fresh = AccountStateStore.refresh()
-            accountState = fresh
-            accountStateRefreshing = false
-            runOnUiThread {
-                qualityAdapter?.let { adapter ->
-                    adapter.lockedMaxQuality = QualityAccessPolicy.maxUnlockedQn(fresh.loggedIn, fresh.vip)
-                    adapter.notifyDataSetChanged()
-                }
-                // 面板正开着时按新状态重建一次：4K 提示项是"没权限才补"的，账号状态从缓存翻成
-                // 大会员后必须把它去掉，否则会出现一个点不动的假 4K
-                if (card_quality_selector.visibility == View.VISIBLE) showQualitySelectorCard()
-            }
-        }
-    }
-
     private fun switchQuality(newQuality: Int) {
         if (!isOnlineVideo || newQuality == currentQuality) return
-        // 一切档位都优先走 DASH：并不是因为低档位只能 DASH 拿，而是清晰度面板要靠 DASH 的
-        // 完整档位清单（fnval=1 会按请求档位裁剪，720P 请求只回 720P/360P，1080P60/4K 直接消失）。
-        // 只有 DASH 取流失败时才在 getPlaybackVideo 内回退合一 MP4。
-        // 倍速下也一样：随包的 ijkplayer 已打补丁，纯视频流能跟着变速，不用再换成合一 MP4。
-        applyQuality(newQuality, true)
-    }
 
-    /**
-     * 真正执行清晰度切换：重新取流 → 重建 ijk → 重新 setDisplay。
-     *
-     * <p>把「取流 + 落地」从 [switchQuality] 里拆出来，是因为在线 DASH 音轨加载失败时也要
-     * 走同一条路回退 720P（见 [onHighQualityAudioFailed]），那时唯一的差别就是 `allowDash=false`。
-     *
-     * @param allowDash 是否允许用 DASH 双流（无声视频 + 独立音轨）；false 时强制走合一 MP4
-     */
-    private fun applyQuality(newQuality: Int, allowDash: Boolean) {
         MsgUtil.showMsg(UiText.of("正在切换清晰度..."))
 
         CenterThreadPool.run {
             try {
-                // 超权档位（例如没大会员却请求 4K）先夹到权限内：服务端对超权请求会降级发流，
-                // 有时降得比权限内最高档还低，夹紧后界面显示的档位与实际流才一致
-                val requestedQuality = AccountStateStore.clampQuality(newQuality)
                 val playerData = PlayerData()
                 playerData.aid = aid
                 playerData.cid = cid
                 playerData.title = text_title!!.text.toString()
                 playerData.mid = mid
-                playerData.qn = requestedQuality
+                playerData.qn = newQuality
                 playerData.pagenames = pagenames
                 playerData.cids = cids
                 playerData.currentPageIndex = currentPageIndex
-                // 番剧维度要带上：缺了它 DASH 会走投稿接口，1080P 照样拿不到
-                playerData.epid = epid
-                playerData.seasonId = seasonId
-                playerData.seasonType = seasonType
 
-                if (allowDash) {
-                    if (epid != 0L) PlayerApi.getPlaybackBangumi(playerData)
-                    else PlayerApi.getPlaybackVideo(playerData)
-                } else {
-                    if (epid != 0L) PlayerApi.getBangumi(playerData)
-                    else PlayerApi.getVideo(playerData, false)
-                }
-
-                val newVideoUrl = playerData.videoUrl
-                if (newVideoUrl.isNullOrBlank()) throw IllegalStateException("取流结果为空")
-                // 合一 MP4（fnval=1）会按账号权限降级发流，真实档位由响应 quality 回填进
-                // playerData.qn（见 PlayerApi#applyActualQuality）；DASH 成功时就是请求档位。
-                val dashUsable = allowDash && !playerData.audioUrl.isNullOrBlank()
-                val appliedQuality = when {
-                    allowDash && !dashUsable -> PlayerStreamPolicy.QN_720P
-                    !allowDash && playerData.qn > 0 -> playerData.qn
-                    else -> requestedQuality
-                }
+                PlayerApi.getVideo(playerData, false)
 
                 runOnUiThread {
                     if (destroyed) return@runOnUiThread
@@ -4620,28 +4323,19 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                     // 重建前的续播位置同样用 video_now（见 toggleAudioOnlyMode / retryAfterPlayerError），
                     // 这里虽然已经在 runOnUiThread 里，仍然不该在主线程上摸 native 锁
                     val currentPosition = video_now.toLong()
+                    val wasPlaying = isPlaying
 
                     releaseAudioTrack()
-                    // 只有 DASH 双流才挂外部音轨：合一 MP4 自带音轨，再挂一路会重复出声
-                    audioTrackUrl = if (dashUsable) playerData.audioUrl else null
-                    // 新一轮切清晰度：重置音轨重试额度（上一次用掉的重试不该影响这一次）
-                    dashAudioRetryCount = 0
+                    audioTrackUrl = null // 在线取流已改变媒体来源，不复用本地旧音轨。
                     ijkPlayer?.stop()
                     ijkPlayer?.release()
 
-                    video_url = newVideoUrl
-                    currentQuality = appliedQuality
+                    video_url = playerData.videoUrl
+                    currentQuality = newQuality
 
-                    val newValues = playerData.qnValueList
-                    if (playerData.qnStrList != null && newValues != null) {
-                        // 回退成合一 MP4 时服务端只回 720P/360P；若直接覆盖，清晰度列表会被降级，
-                        // 用户再也点不到 1080P（连"再试一次"的入口都没了）。只有新列表不比旧列表
-                        // 短档（最高档不降）时才采用它。
-                        val oldMax = qnValueList?.maxOrNull() ?: -1
-                        if ((newValues.maxOrNull() ?: -1) >= oldMax) {
-                            qnStrList = playerData.qnStrList
-                            qnValueList = newValues
-                        }
+                    if (playerData.qnStrList != null && playerData.qnValueList != null) {
+                        qnStrList = playerData.qnStrList
+                        qnValueList = playerData.qnValueList
                     }
 
                     loading_info.visibility = View.VISIBLE
@@ -4654,15 +4348,9 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                     progress_history = currentPosition
 
                     setDisplay()
-
-                    dashAudioFallbackInFlight = false
-                    if (allowDash && !dashUsable) {
-                        MsgUtil.showMsg(UiText.of("这条视频暂时只能提供 720P"))
-                    }
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    dashAudioFallbackInFlight = false
                     MsgUtil.err(e)
                     MsgUtil.showMsg(UiText.of("清晰度切换失败"))
                 }
@@ -5017,7 +4705,7 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                 playerData.cid = targetCid
                 playerData.title = newData.title
                 playerData.mid = mid
-                playerData.qn = AccountStateStore.clampQuality(getTargetQuality())
+                playerData.qn = getTargetQuality()
 
                 if (pagenames != null && cids != null) {
                     playerData.pagenames = pagenames
@@ -5029,21 +4717,13 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                     }
                 }
 
-                // 互动跳转的清晰度同样按清晰度选接口（DASH 才能拿 1080P）
-                if (epid != 0L) PlayerApi.getPlaybackBangumi(playerData)
-                else PlayerApi.getPlaybackVideo(playerData)
-                val interactionAudioUrl = playerData.audioUrl?.takeIf { it.isNotBlank() }
-                // DASH 取流回退成合一 MP4 时服务端只给到 720P，不能继续显示请求的 1080P
-                val interactionQuality =
-                    if (playerData.qn > PlayerStreamPolicy.QN_720P && interactionAudioUrl == null) {
-                        PlayerStreamPolicy.QN_720P
-                    } else playerData.qn
+                PlayerApi.getVideo(playerData, false)
 
                 runOnUiThread {
                     if (destroyed) return@runOnUiThread
 
                     releaseAudioTrack()
-                    audioTrackUrl = interactionAudioUrl
+                    audioTrackUrl = null
                     ijkPlayer?.stop()
                     ijkPlayer?.release()
                     releaseDanmaku()
@@ -5058,7 +4738,7 @@ class PlayerActivity : Activity(), IMediaPlayer.OnPreparedListener {
                     if (playerData.qnStrList != null && playerData.qnValueList != null) {
                         qnStrList = playerData.qnStrList
                         qnValueList = playerData.qnValueList
-                        currentQuality = interactionQuality
+                        currentQuality = playerData.qn
                     }
 
                     loading_info.visibility = View.VISIBLE

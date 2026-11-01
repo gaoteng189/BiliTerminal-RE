@@ -154,10 +154,12 @@ object SettingsIndex {
         list += Entry("新版弹幕获取方式", "切换弹幕获取API") { a -> openGroup(a, "lab", "高级与实验", "新版弹幕获取方式") }
         list += Entry("私信未读标记", "私信未读标记") { a -> openGroup(a, "lab", "高级与实验", "私信未读标记") }
         list += Entry("虚拟合集", "本地缓存/收藏夹自动组成合集") { a -> openGroup(a, "lab", "高级与实验", "虚拟合集") }
+        list += Entry("收藏夹视频点击即播", "在收藏夹里点视频卡片直接播放") { a -> openGroup(a, "lab", "高级与实验", "收藏夹视频点击即播") }
         list += Entry("播放器旋屏兼容方案", "软件旋屏兼容") { a -> openGroup(a, "lab", "高级与实验", "播放器旋屏兼容方案") }
         list += Entry("显示视频分段", "显示章节看点信息") { a -> openGroup(a, "lab", "高级与实验", "显示视频分段") }
         list += Entry("系统媒体控件", "系统媒体会话控件") { a -> openGroup(a, "lab", "高级与实验", "系统媒体控件") }
         list += Entry("互动视频调试", "互动视频变量调试") { a -> openGroup(a, "lab", "高级与实验", "互动视频调试") }
+        list += Entry("圆屏列表", "圆屏模式的滚动列表曲率效果") { a -> openGroup(a, "lab", "高级与实验", "圆屏列表") }
 
         // ---- 叶子设置项（独立设置页）----
         addLeafItems(list, "详情页设置", SettingInfoActivity::class.java, listOf(

@@ -62,6 +62,7 @@
     <string name="setting_lab_recyclererr_detailed">由于开发者技术稀烂（？），软件中的各种列表可能会偶尔出现报错且难以避免。\n虽然是偶尔出现，但很烦人很恶心。\n所以被逼疯的开发者把这个报错catch掉了，只留下一个“此错误无需上报”的提示框和这个用于调试的开关。</string>
     <string name="setting_lab_logv">打开此开关，将会允许输出verbose等级的log，仅对Logu生效。\n下面那两个开关同理，管的分别是debug和info等级\n*非开发者不需要看懂这段话，一般人不需要动这个开关。大量的日志输出可能会降低性能。\n——不过其实终端的代码里从一开始就是Log.e到处飞，很多地方根本没做限制（从小天才和小电视播放器学来的坏习惯），现在在逐步替换……</string>
     <string name="setting_lab_media_session">启用后可在通知栏和锁屏界面控制播放。\n仅部分设备可正常使用。</string>
+    <string name="desc_ui_round_list_effect">圆屏模式下给所有滚动列表加曲率缩放与边缘淡出：条目越靠近屏幕上下边缘越小、越透明，避免顶到圆形屏面的弧形边界。\n实验性效果，开启后重新进入页面生效。</string>
     <string name="desc_dev_agent_mode">给 AI agent / 自动化脚本用的一键开关。\n打开后：日志全量输出、HTTP 请求与响应写入日志、启动时不再弹 UETool 悬浮窗。\n仅 Debug 构建有效，且只在开发者工具分组里出现。</string>
     <string name="desc_dev_log_file">把日志与 HTTP 追踪写入文件，便于脱离 adb 连接后事后取证。\n位置：应用专属外部目录的 logs/ 下。\n仅在 Agent 测试模式打开时生效。</string>
 
@@ -374,9 +375,12 @@
 
     #本次版本更新日志（展示在关于页，与历史日志区分）
     <string-array name="update_log_current">
-        <item>【26.10.31 本次更新】</item>
-        <item>1、修了倍速播放时听到两路重叠音频、其中一路跟不上的问题：现在画面和声音都真按倍速走，1080P 高清片源也能正常倍速。</item>
-        <item>2、修了扫码登录在停掉轮询后，失败提示里直接冒出英文异常原文的问题。</item>
+        <item>【26.11.01 本次更新】</item>
+        <item>1、播放器相关代码整体退回 26.10.27 的稳定实现，修上一版在手机上「安装包明显变大、视频完全播不出来」的问题；画面与声音恢复单路流播放，音画不再错位。</item>
+        <item>2、新增「退出」按钮（菜单底部），点一下彻底关闭应用，不用再去系统里强停。</item>
+        <item>3、新增实验功能「圆屏列表」：圆屏模式下滚动列表时条目带曲率缩放与边缘淡出（设置 → 高级与实验，默认关闭，需与「圆屏适配」同时开启）。</item>
+        <item>4、修了播放时系统媒体控件把本应用认成「下载」的问题，现在正确显示为音乐播放，并带上封面与进度。</item>
+        <item>5、列表封面加载更省资源（复用图片请求参数），快速滚动更顺。</item>
     </string-array>
 
     #历史更新日志（按日期分组，## 开头为日期标题，之后为当日日志条目）
@@ -392,6 +396,8 @@
         <item>8、弥散光晕可选光源位置（上 / 下 / 左 / 右 / 中间）；修了亮色模式下按钮透出的光边。</item>
         <item>9、设备时间不对时会提示改时间，避免登录、播放莫名其妙失败。</item>
         <item>10、修了一批问题：工具页跳转杀掉下层页面、举报理由缓存串味、短视频弹幕不跟设置、空关键词搜索藏掉历史。</item>
+        <item>11、修了倍速播放时听到两路重叠音频、其中一路跟不上的问题。</item>
+        <item>12、修了扫码登录在停掉轮询后，失败提示里直接冒出英文异常原文的问题。</item>
         <item></item>
         <item>## 2026-10-27</item>
         <item>1. 新增暗色 / 亮色模式、新增弥散光晕背景、新增玻璃质感（默认关闭）</item>
@@ -788,6 +794,7 @@
     <string name="desc_high_performance">开启后将使用更多系统资源以提升运行速度。高性能手机自动启用；低性能手表建议关闭以获得更好的续航和稳定性。</string>
     <string name="desc_recommend_dedup">过滤掉已经显示过的推荐视频，避免重复</string>
     <string name="desc_virtual_collection">开启后，在播放本地缓存视频或收藏夹视频时，会将同一文件夹/收藏夹的视频自动组成合集，支持切换和自动联播</string>
+    <string name="desc_virtual_collection_click_play">开启后，在收藏夹里点视频卡片会直接开始播放；关闭时点卡片进入视频详情页。想不看详情直接连播整个收藏夹，可长按卡片选「以虚拟合集连播」</string>
     <string name="desc_player_rotate_software">在极少数手表上（如小米手表），系统旋屏存在显示不全的问题。打开此开关，播放器将会使用软件旋屏方法。</string>
     <string name="desc_player_viewpoints">显示视频的章节看点信息，可快速跳转到指定章节</string>
     <string name="desc_player_interaction_debug">在互动视频播放时，在左侧倍速按钮上方显示调试按钮，可以查看和修改互动视频的变量</string>
@@ -799,6 +806,7 @@
     <string name="text_update_progress">%1$d%%  %2$dMB / %3$dMB</string>
     <string name="text_update_downloaded_mb">已下载 %1$dMB</string>
     <string name="btn_cancel">取消</string>
+    <string name="btn_exit">退出</string>
     <string name="btn_exit_app">退出应用</string>
     <string name="btn_download_update">下载更新</string>
     <string name="btn_cancel_download">取消下载</string>
@@ -850,6 +858,8 @@
     <string name="text_download_total_progress">总进度 %1$d%% · %2$s</string>
     <string name="text_download_service_exit">下载服务已退出</string>
     <string name="channel_download">哔哩终端下载服务</string>
+    <string name="channel_media_control">音乐播放</string>
+    <string name="channel_media_control_desc">播放时的系统媒体控件通知</string>
     <!-- ===== 下载完成提示与通用「加载失败」（12.4 文案迁移：四批） ===== -->
     <string name="text_downloading_file">下载文件中</string>
     <string name="text_download_failed">下载失败</string>
@@ -1059,6 +1069,7 @@
     <string name="settingtext_settinggroupactivity_091">Agent 测试</string>
     <string name="settingtext_settinggroupactivity_092">Agent 测试模式</string>
     <string name="settingtext_settinggroupactivity_093">日志落盘</string>
+    <string name="settingtext_settinggroupactivity_094">收藏夹视频点击即播</string>
     <string name="settingtext_settinginfoactivity_001">收藏夹单选</string>
     <string name="settingtext_settinginfoactivity_002">收藏成功提示</string>
     <string name="settingtext_settinginfoactivity_003">点击封面播放</string>
@@ -1204,6 +1215,7 @@
     <string name="settingtext_settingsindex_079">显示分P按钮</string>
     <string name="settingtext_settingsindex_080">互动选项字体大小</string>
     <string name="settingtext_settingsindex_081">字幕字号大小</string>
+    <string name="settingtext_settingsindex_082">在收藏夹里点视频卡片直接播放</string>
     <string name="settingtext_settingterminalplayeractivity_001">开</string>
     <string name="settingtext_settingterminalplayeractivity_002">关</string>
     <string name="settingtext_settingterminalplayeractivity_003">沿用上次</string>
@@ -2392,6 +2404,7 @@
     <string name="uitext_favoritevideolistactivity_021">删除失败，错误码：%1$s</string>
     <string name="uitext_favoritevideolistactivity_022">取消失败，错误码：%1$s</string>
     <string name="uitext_favoritevideolistactivity_023">%1$s（虚拟合集）</string>
+    <string name="uitext_favoritevideolistactivity_024">以虚拟合集连播</string>
     <string name="uitext_userinfoactivity_002">用户信息-%1$s</string>
     <string name="uitext_bangumiinfofragment_020">已完结</string>
     <string name="uitext_bangumiinfofragment_021">连载中</string>
@@ -2470,27 +2483,6 @@
     <string name="msg_reply_translate_failed">翻译失败，请稍后再试</string>
     <!-- 请求成功但服务端没给译文（已是目标语言/不支持翻译）时的提示 -->
     <string name="msg_reply_translate_none">该评论暂无译文（可能已是目标语言或不支持翻译）</string>
-
-    <!-- ==================== 举报评论（长按操作面板入口） ==================== -->
-    <!-- 操作面板里的入口文案 -->
-    <string name="text_reply_report">举报评论</string>
-    <!-- 选理由弹窗的标题 -->
-    <string name="title_report_reason">选择举报理由</string>
-    <!-- 理由选「需正文」那一档时再收一次正文；长度口径与官方 H5 一致（2~200 字符） -->
-    <string name="title_report_content">补充举报理由</string>
-    <string name="hint_report_content">2-200 字符，说清哪里违规</string>
-    <string name="btn_report_submit">提交</string>
-    <!-- 未登录时不给提交（服务端会回 -101/-352），先提示而不是让请求白跑一趟 -->
-    <string name="msg_report_login_first">请先登录后再举报</string>
-    <!-- 与官方 H5 文案「自定义举报内容长度为2-200字符」一致 -->
-    <string name="msg_report_content_too_short">举报理由需在 2-200 字符之间</string>
-    <string name="msg_report_submitted">举报已提交，感谢你的反馈~</string>
-
-    <!-- ==================== 消息：收到的赞 ==================== -->
-    <!-- 弹幕被点赞；%1$d 为点赞总人数 -->
-    <string name="text_like_danmaku">等总共 %1$d 人点赞了你的弹幕</string>
-    <!-- 弹幕点赞消息里没带视频地址，无法跳转 -->
-    <string name="msg_like_danmaku_no_video">没找到这条弹幕所在的视频</string>
 
     <!-- ==================== 私信：长按菜单 / 撤回 ==================== -->
     <string name="btn_private_msg_copy">复制文字</string>
