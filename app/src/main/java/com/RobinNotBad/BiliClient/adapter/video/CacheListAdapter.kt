@@ -6,12 +6,15 @@ import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.RobinNotBad.BiliClient.R
 import com.RobinNotBad.BiliClient.activity.video.local.DownloadListActivity
 import com.RobinNotBad.BiliClient.activity.video.local.LocalPageChooseActivity
@@ -20,6 +23,7 @@ import com.RobinNotBad.BiliClient.model.LocalVideo
 import com.RobinNotBad.BiliClient.model.PlayerData
 import com.RobinNotBad.BiliClient.model.VideoFolder
 import com.RobinNotBad.BiliClient.util.GlideUtil
+import com.RobinNotBad.BiliClient.util.LocalListSort
 import com.RobinNotBad.BiliClient.util.MsgUtil
 import com.RobinNotBad.BiliClient.util.ToolsUtil
 import com.RobinNotBad.BiliClient.util.VirtualCollectionPrefs
@@ -37,7 +41,14 @@ import java.util.Locale
  * - 未分类视频区域标题
  * - 视频项（点击播放、长按弹功能菜单）
  * - 空态提示行（某个分区一个视频都没有时占位，替代盖住整页的居中空态）
- * - 多选按钮（底部）
+ *
+ * 多选：底部那条「多选 / 已选 N 项 / 操作 / 退出」由 Activity 提供（见 activity_simple_main_refresh.xml），
+ * 适配器只负责两件事：勾选态怎么画（[applySelection]）、点了哪一项（[onVideoToggle] / [onFolderToggle]）。
+ * [selectionMode] 打开后，条目点击与长按都变成勾选，不再播放 / 弹菜单。
+ *
+ * 手动排序（26.11.05，反馈 #94 返工）：用户要的是「缓存自己排序」，所以排序不再按字段排，
+ * 而是进 [sortMode] 后长按条目拖动，顺序即时写回 Model，松手由 Activity 落盘。这里只保存
+ * 「原始下标」的显示顺序（[flatItems]），Activity 的多选 / 删除 / 刷新逻辑一行都不用改。
  */
 class CacheListAdapter(
     private val context: Context
@@ -51,6 +62,10 @@ class CacheListAdapter(
         private const val TYPE_SECTION_VIDEO_HEADER = 4
         private const val TYPE_VIDEO_ITEM = 5
         private const val TYPE_EMPTY_TIP = 6
+
+        /** 多选前缀：勾上用 ✓，未勾用全角空格占位（与收藏夹多选同一套视觉，见 VideoCardHolder）。 */
+        private const val PREFIX_SELECTED = "✓ "
+        private const val PREFIX_UNSELECTED = "　 "
     }
 
     // 数据
@@ -58,6 +73,43 @@ class CacheListAdapter(
     private var videoList: ArrayList<LocalVideo> = ArrayList()
 
     var currentFolderName: String = ""
+
+    /**
+     * 排序模式：打开后条目可以长按拖动；关闭时点击播放 / 进夹，长按弹功能菜单。
+     *
+     * 只影响手势，不需要 notifyDataSetChanged：绑定时的点击/长按回调每次都读这个字段，
+     * 进入/退出排序模式不会重绑整屏封面（封面用 DiskCacheStrategy.NONE，整屏重绑会明显闪）。
+     */
+    var sortMode: Boolean = false
+
+    /** 由 Activity 在 attach ItemTouchHelper 后回填，长按条目时用它启动拖动（同 MenuSettingAdapter）。 */
+    var touchHelper: ItemTouchHelper? = null
+
+    /** 已归一化的搜索词；空串 = 不过滤。同时匹配视频标题与文件夹名（忽略大小写）。 */
+    var searchKeyword: String = ""
+        private set
+
+    /**
+     * 未分类视频的持久化顺序（标题列表），由 Activity 从 [com.RobinNotBad.BiliClient.util.CacheListOrderStore] 读出来交进来。
+     *
+     * 拖动时会就地更新这份内存态（[moveVideo]），保证重新进/出文件夹后还是用户拖出来的顺序；
+     * 真正落盘由 Activity 在拖动结束时做，适配器不碰文件、也不读 SharedPreferences。
+     */
+    private var unclassifiedOrder: List<String> = emptyList()
+
+    /** 当前未分类视频的顺序，拖动结束后 Activity 拿去落盘。 */
+    val unclassifiedVideoOrder: List<String>
+        get() = unclassifiedOrder
+
+    /** 一次拖动结束（离手）时回调，参数表示这次拖过哪一类。Activity 收到后把当前顺序落盘。 */
+    var onOrderDragFinished: ((foldersChanged: Boolean, videosChanged: Boolean) -> Unit)? = null
+
+    private var folderOrderDirty = false
+    private var videoOrderDirty = false
+
+    /** 当前实际画出来的文件夹 / 视频条数。搜索时分区标题上的「N个」要跟着变，不能再直接数原始列表。 */
+    private var visibleFolderCount = 0
+    private var visibleVideoCount = 0
 
     /**
      * 获取所有items的扁平化列表类型
@@ -81,6 +133,26 @@ class CacheListAdapter(
     /** 长按视频：由 Activity 弹功能菜单（更新弹幕 / 切换分辨率 / 移动文件夹 / 详情 / 删除）。 */
     var onVideoMenu: ((Int) -> Unit)? = null
 
+    /** 多选模式：打开后条目点击/长按都变成勾选，勾中项加前缀、未勾项压暗。 */
+    var selectionMode: Boolean = false
+
+    /**
+     * 勾中的视频，按标题记。
+     *
+     * 标题就是缓存目录名，同一次扫描里唯一；不用下标是因为刷新（删除 / 移动）后下标会整体挪位，
+     * 用标题才能在重扫后仍然对得上，[setData] 里也靠它重新画出勾选态。
+     */
+    var selectedVideoTitles: Set<String> = emptySet()
+
+    /** 勾中的文件夹，按名称记。 */
+    var selectedFolderNames: Set<String> = emptySet()
+
+    /** 多选态点了视频：由 Activity 翻转勾选。 */
+    var onVideoToggle: ((Int) -> Unit)? = null
+
+    /** 多选态点了文件夹：由 Activity 翻转勾选。 */
+    var onFolderToggle: ((Int) -> Unit)? = null
+
     fun setData(folders: ArrayList<VideoFolder>, videos: ArrayList<LocalVideo>, currentFolder: String = "") {
         folderList = folders
         videoList = videos
@@ -89,46 +161,259 @@ class CacheListAdapter(
         notifyDataSetChanged()
     }
 
+    /**
+     * 换搜索词后重建列表。
+     *
+     * 必须整体重建而不是逐条 notifyItemXXX：搜索可能把整个文件夹区域藏掉，条目集合和分组数量都会变，
+     * 逐条刷得自己算一大堆位移。勾选状态按标题记（[selectedVideoTitles] / [selectedFolderNames]），
+     * 重建后由 [applySelection] 重新画出来，过滤不会丢勾选。
+     */
+    fun setSearchKeyword(keyword: String) {
+        val normalized = LocalListSort.normalizeKeyword(keyword)
+        if (searchKeyword == normalized) return
+        searchKeyword = normalized
+        rebuildFlatList()
+        notifyDataSetChanged()
+    }
+
+    /**
+     * 设置未分类视频的持久化顺序（进页面 / 重扫后由 Activity 调，拖动中途不要调）。
+     *
+     * 顺序变化后要重建 flatItems，因为顶层「未分类视频」区就是按它画的。
+     */
+    fun setUnclassifiedOrder(order: List<String>) {
+        if (unclassifiedOrder == order) return
+        unclassifiedOrder = order
+        if (currentFolderName.isEmpty()) {
+            rebuildFlatList()
+            notifyDataSetChanged()
+        }
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        // 勾选态是用 notifyItemChanged + alpha 画的：默认的交叉淡入动画会在动画期间把 alpha
+        // 复位成 1f，取消勾选看起来像没生效（收藏夹多选踩过同一个坑，见 VideoCardAdapter）。
+        (recyclerView.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
+    }
+
+    /**
+     * 勾选状态变了，只重绘这一条。
+     *
+     * 不能整体 `notifyDataSetChanged()`：封面加载用的是 `DiskCacheStrategy.NONE`，整体重绑会让
+     * 每勾一下都把整屏封面重新读一遍，手表上肉眼可见地闪。
+     */
+    fun notifyVideoSelectionChanged(videoIndex: Int) {
+        val position = flatItems.indexOfFirst { it.type == TYPE_VIDEO_ITEM && it.videoIndex == videoIndex }
+        if (position >= 0) notifyItemChanged(position)
+    }
+
+    fun notifyFolderSelectionChanged(folderIndex: Int) {
+        val position = flatItems.indexOfFirst { it.type == TYPE_FOLDER_ITEM && it.folderIndex == folderIndex }
+        if (position >= 0) notifyItemChanged(position)
+    }
+
     private fun rebuildFlatList() {
         flatItems.clear()
+
+        // 显示顺序 = 用户手动拖出来的顺序：
+        // 夹与夹之间看 folderList 的顺序（已持久化在 .folders_info.json），
+        // 视频看各自存着的标题序（夹内 = VideoFolder.videoTitles，未分类 = unclassifiedOrder）。
+        // flatItems 里仍然只放「原始下标」，Activity 侧的下标语义不用换。
+        val visibleFolders = ArrayList<Int>()
+        if (currentFolderName.isEmpty()) {
+            for (i in folderList.indices) {
+                if (LocalListSort.matches(folderList[i].name, searchKeyword)) visibleFolders.add(i)
+            }
+        }
+
+        // 先把当前 scope 的扫描下标收齐，再按持久化的标题序排；没记录的新条目由
+        // orderByStoredTitles 按扫描顺序补到最后，不会因为「记录里没有」就消失。
+        val scopeIndices = ArrayList<Int>()
+        if (currentFolderName.isEmpty()) {
+            for (i in videoList.indices) {
+                // 文件夹内的视频在文件夹里显示
+                if (videoList[i].folderName.isNullOrEmpty()) scopeIndices.add(i)
+            }
+        } else {
+            for (i in videoList.indices) {
+                if (videoList[i].folderName == currentFolderName) scopeIndices.add(i)
+            }
+        }
+        val storedTitles: List<String> = if (currentFolderName.isEmpty()) {
+            unclassifiedOrder
+        } else {
+            folderList.find { it.name == currentFolderName }?.videoTitles ?: emptyList()
+        }
+        val videoOrder = LocalListSort.orderByStoredTitles(scopeIndices, storedTitles) { videoList[it].title }
+
+        // 再把「这一屏真的要画的」筛出来，然后才决定分区标题 / 空态画不画。
+        // 不能边扫边画：搜索只命中文件夹时，未分类视频是 0 条，边扫边判断会多补一句
+        // 「没有匹配的缓存」，可实际上列表里明明有命中的文件夹。
+        val visibleVideos = ArrayList<Int>()
+        for (i in videoOrder) {
+            if (!LocalListSort.matches(videoList[i].title, searchKeyword)) continue
+            visibleVideos.add(i)
+        }
+        visibleFolderCount = visibleFolders.size
+        visibleVideoCount = visibleVideos.size
 
         if (currentFolderName.isEmpty()) {
             flatItems.add(FlatItem(TYPE_GOTO_DOWNLOAD))
 
-            if (folderList.isNotEmpty()) {
+            // 文件夹区域：标题只在这一区至少有一条命中时才画
+            if (visibleFolders.isNotEmpty()) {
                 flatItems.add(FlatItem(TYPE_SECTION_FOLDER_HEADER))
-                for (i in folderList.indices) {
-                    flatItems.add(FlatItem(TYPE_FOLDER_ITEM, folderIndex = i))
-                }
+                for (i in visibleFolders) flatItems.add(FlatItem(TYPE_FOLDER_ITEM, folderIndex = i))
             }
+
             flatItems.add(FlatItem(TYPE_ACTION_NEW_FOLDER))
 
-            flatItems.add(FlatItem(TYPE_SECTION_VIDEO_HEADER))
-            var uncategorizedCount = 0
-            for (i in videoList.indices) {
-                if (videoList[i].folderName.isNullOrEmpty()) {
-                    flatItems.add(FlatItem(TYPE_VIDEO_ITEM, videoIndex = i))
-                    uncategorizedCount++
-                }
+            // 「未分类视频」：不搜索时保持原样（标题 + 标题下的空态行，空态放这里是因为浮层
+            // 会和「新建文件夹」按钮重合，且不参与滚动，见 26.10.20 用户反馈）；
+            // 搜索时 0 条就先不画这个分区，整页都没命中时再在末尾补一句「没有匹配的缓存」。
+            if (visibleVideos.isNotEmpty()) {
+                flatItems.add(FlatItem(TYPE_SECTION_VIDEO_HEADER))
+                for (i in visibleVideos) flatItems.add(FlatItem(TYPE_VIDEO_ITEM, videoIndex = i))
+            } else if (searchKeyword.isEmpty()) {
+                flatItems.add(FlatItem(TYPE_SECTION_VIDEO_HEADER))
+                flatItems.add(FlatItem(TYPE_EMPTY_TIP))
             }
-            // 空态放在「未分类视频」标题下面当列表项，而不是盖在整页中间的浮层：
-            // 浮层会和「新建文件夹」按钮重合（26.10.20 用户反馈），而且它不参与滚动。
-            if (uncategorizedCount == 0) {
+            if (searchKeyword.isNotEmpty() && visibleFolders.isEmpty() && visibleVideos.isEmpty()) {
                 flatItems.add(FlatItem(TYPE_EMPTY_TIP))
             }
         } else {
             flatItems.add(FlatItem(TYPE_SECTION_VIDEO_HEADER))
-            var folderVideoCount = 0
-            for (i in videoList.indices) {
-                if (videoList[i].folderName == currentFolderName) {
-                    flatItems.add(FlatItem(TYPE_VIDEO_ITEM, videoIndex = i))
-                    folderVideoCount++
-                }
-            }
-            if (folderVideoCount == 0) {
+            for (i in visibleVideos) flatItems.add(FlatItem(TYPE_VIDEO_ITEM, videoIndex = i))
+            if (visibleVideos.isEmpty()) {
                 flatItems.add(FlatItem(TYPE_EMPTY_TIP))
             }
         }
+    }
+
+    /**
+     * 拖动排序的实现。
+     *
+     * 复用菜单设置页那套写法（`MenuSettingAdapter.dragCallback`）：
+     * `isLongPressDragEnabled = false` + 条目长按里手动 `startDrag`，这样常态长按仍然是功能菜单，
+     * 只有排序模式才变成拖动手势。
+     *
+     * 拖动范围只到「同一分区内」：分区标题 / 新建文件夹 / 下载列表入口 / 空态都不是可拖类型，
+     * `onMove` 直接返回 false，ItemTouchHelper 会停在原地，不用自己算上下边界。
+     */
+    val dragCallback: ItemTouchHelper.Callback = object : ItemTouchHelper.Callback() {
+        override fun isLongPressDragEnabled(): Boolean = false
+
+        override fun getMovementFlags(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder
+        ): Int {
+            if (!sortMode) return 0
+            val position = viewHolder.bindingAdapterPosition
+            if (position < 0 || position >= flatItems.size) return 0
+            return when (flatItems[position].type) {
+                TYPE_FOLDER_ITEM, TYPE_VIDEO_ITEM ->
+                    makeMovementFlags(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0)
+                else -> 0
+            }
+        }
+
+        override fun onMove(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder,
+            target: RecyclerView.ViewHolder
+        ): Boolean {
+            if (!sortMode) return false
+            // 搜索过滤后拖动只会在「可见子集」里排，落盘时无法表达被隐藏条目的相对位置；
+            // Activity 进排序模式前会先清空搜索词，这里再兜一层底。
+            if (searchKeyword.isNotEmpty()) return false
+            val from = viewHolder.bindingAdapterPosition
+            val to = target.bindingAdapterPosition
+            if (from < 0 || to < 0 || from == to) return false
+            val fromItem = flatItems.getOrNull(from) ?: return false
+            val toItem = flatItems.getOrNull(to) ?: return false
+            if (fromItem.type != toItem.type) return false
+            return when (fromItem.type) {
+                TYPE_FOLDER_ITEM -> moveFolder(from, to, fromItem, toItem)
+                TYPE_VIDEO_ITEM -> moveVideo(from, to)
+                else -> false
+            }
+        }
+
+        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+        override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+            super.clearView(recyclerView, viewHolder)
+            if (!folderOrderDirty && !videoOrderDirty) return
+            val foldersChanged = folderOrderDirty
+            val videosChanged = videoOrderDirty
+            folderOrderDirty = false
+            videoOrderDirty = false
+            // 与 MenuSettingAdapter.clearView 同一个理由：这里还在 RecyclerView 的 scroll/layout 回调里，
+            // 当场写文件 / notify 会撞上 "Cannot call this method while RecyclerView is computing a layout
+            // or scrolling"（线上踩过 6 例），post 到下一帧再交给 Activity 落盘。
+            recyclerView.post { onOrderDragFinished?.invoke(foldersChanged, videosChanged) }
+        }
+    }
+
+    /**
+     * 把文件夹从 [from] 拖到 [to]。
+     *
+     * 顺序载体就是 folderList 本身（对应 .folders_info.json 的数组顺序），所以直接在上面做
+     * removeAt/add。FlatItem.folderIndex 存的是 folderList 下标，列表挪过之后旧值会整体错位，
+     * 这里按文件夹条目当前的先后重编号一次（排序模式下不搜索，文件夹条目就是全部文件夹）。
+     */
+    private fun moveFolder(from: Int, to: Int, fromItem: FlatItem, toItem: FlatItem): Boolean {
+        val fromIndex = fromItem.folderIndex
+        val toIndex = toItem.folderIndex
+        if (fromIndex !in folderList.indices || toIndex !in folderList.indices) return false
+        val moved = folderList.removeAt(fromIndex)
+        folderList.add(toIndex, moved)
+
+        flatItems.add(to, flatItems.removeAt(from))
+        var index = 0
+        for (i in flatItems.indices) {
+            val item = flatItems[i]
+            if (item.type != TYPE_FOLDER_ITEM) continue
+            if (item.folderIndex != index) {
+                flatItems[i] = FlatItem(TYPE_FOLDER_ITEM, folderIndex = index)
+            }
+            index++
+        }
+        notifyItemMoved(from, to)
+        folderOrderDirty = true
+        return true
+    }
+
+    /**
+     * 把视频从 [from] 拖到 [to]。
+     *
+     * 视频相对顺序没有「列表本身」可写，所以拖完从 flatItems 里按出现顺序取标题，
+     * 合并进持久化顺序的内存态（未分类写 [unclassifiedOrder]，夹内写 VideoFolder.videoTitles）。
+     * 真正落盘在 [onOrderDragFinished] 里由 Activity 做，避免 onMove 高频写文件。
+     */
+    private fun moveVideo(from: Int, to: Int): Boolean {
+        flatItems.add(to, flatItems.removeAt(from))
+        notifyItemMoved(from, to)
+
+        val titles = ArrayList<String>(flatItems.size)
+        for (item in flatItems) {
+            if (item.type != TYPE_VIDEO_ITEM) continue
+            val index = item.videoIndex
+            if (index in videoList.indices) titles.add(videoList[index].title)
+        }
+        if (currentFolderName.isEmpty()) {
+            unclassifiedOrder = LocalListSort.mergeOrder(titles, unclassifiedOrder)
+        } else {
+            val folder = folderList.find { it.name == currentFolderName }
+            if (folder != null) {
+                // 夹内顺序的唯一载体就是 videoTitles，内存态要同步改，否则退出再进夹会跳回旧顺序；
+                // 旧记录里可能还有这次没显示出来的标题，mergeOrder 会按原相对顺序排在后面。
+                folder.videoTitles = ArrayList(LocalListSort.mergeOrder(titles, folder.videoTitles ?: emptyList()))
+            }
+        }
+        videoOrderDirty = true
+        return true
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -170,24 +455,28 @@ class CacheListAdapter(
 
         when (item.type) {
             TYPE_GOTO_DOWNLOAD -> {
-                (holder as GotoHolder).show(context)
+                // 排序模式是「专心的整理态」：入口类点击先不响应，免得拖到一半跳去下载列表
+                (holder as GotoHolder).show(context) { !sortMode }
             }
             TYPE_SECTION_FOLDER_HEADER -> {
                 (holder as SectionHeaderHolder).apply {
                     sectionTitle.text = UiText.of("文件夹")
-                    sectionCount.text = "${folderList.size}个"
+                    sectionCount.text = "${visibleFolderCount}个"
                 }
             }
             TYPE_SECTION_VIDEO_HEADER -> {
                 (holder as SectionHeaderHolder).apply {
                     if (currentFolderName.isEmpty()) {
                         sectionTitle.text = UiText.of("未分类视频")
-                        sectionCount.text = "${videoList.count { it.folderName.isNullOrEmpty() }}个"
+                        sectionCount.text = "${visibleVideoCount}个"
+                        // 这个 viewType 夹内也在用：从文件夹退到顶层时复用的 holder 可能还带着「点击返回」，
+                        // 不清掉的话点「未分类视频」标题会把用户又送回文件夹
+                        itemView.setOnClickListener(null)
                     } else {
                         sectionTitle.text = currentFolderName
-                        sectionCount.text = "${videoList.count { it.folderName == currentFolderName }}个"
-                        // 点击标题返回
-                        itemView.setOnClickListener { onBackFromFolder?.invoke() }
+                        sectionCount.text = "${visibleVideoCount}个"
+                        // 点击标题返回；排序模式下列表正被整理，不响应返回，避免拖到一半退出文件夹
+                        itemView.setOnClickListener { if (!sortMode) onBackFromFolder?.invoke() }
                     }
                 }
             }
@@ -199,11 +488,20 @@ class CacheListAdapter(
                     text.text = UiText.of("新建文件夹")
                     text.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
                     text.compoundDrawablePadding = 0
-                    itemView.setOnClickListener { onNewFolderClick?.invoke() }
+                    itemView.setOnClickListener { if (!sortMode) onNewFolderClick?.invoke() }
                 }
             }
             TYPE_VIDEO_ITEM -> {
                 bindVideoItem(holder as VideoItemHolder, item.videoIndex)
+            }
+            TYPE_EMPTY_TIP -> {
+                // 搜索没命中时给一句「没有匹配的缓存」，别让用户以为缓存被清空了
+                (holder as EmptyTipHolder).apply {
+                    text.text = context.getString(
+                        if (searchKeyword.isEmpty()) R.string.text_list_empty
+                        else R.string.text_cache_search_empty
+                    )
+                }
             }
         }
     }
@@ -214,10 +512,26 @@ class CacheListAdapter(
 
         holder.folderName.text = folder.name
         holder.folderCount.text = "${folder.getVideoCount()}个视频"
+        applySelection(holder, holder.folderName, selectionMode && selectedFolderNames.contains(folder.name))
 
-        holder.itemView.setOnClickListener { onFolderClick?.invoke(folderIndex) }
+        // 多选 / 排序两种「临时态」进入和退出都只翻字段、不重绑列表（重绑会重读封面、明显闪一下），
+        // 所以监听器里要在点击发生的那一刻再读状态，不能把当前状态烤进闭包：
+        // - 多选：点击 / 长按都是勾选（避免「长按弹菜单、松手又跳进文件夹」）
+        // - 排序：点击不动作（防误触进夹），长按抓起拖动
+        // - 常态：点击进夹，长按弹功能菜单
+        holder.itemView.setOnClickListener {
+            when {
+                selectionMode -> onFolderToggle?.invoke(folderIndex)
+                sortMode -> Unit
+                else -> onFolderClick?.invoke(folderIndex)
+            }
+        }
         holder.itemView.setOnLongClickListener {
-            onFolderMenu?.invoke(folderIndex)
+            when {
+                selectionMode -> onFolderToggle?.invoke(folderIndex)
+                sortMode -> touchHelper?.startDrag(holder)
+                else -> onFolderMenu?.invoke(folderIndex)
+            }
             true
         }
     }
@@ -227,12 +541,42 @@ class CacheListAdapter(
         val video = videoList[videoIndex]
 
         holder.showVideo(video)
+        applySelection(holder, holder.title, selectionMode && selectedVideoTitles.contains(video.title))
 
-        holder.itemView.setOnClickListener { playVideo(video) }
+        // 同文件夹条目：监听器里现读多选 / 排序状态（理由见 bindFolderItem）
+        holder.itemView.setOnClickListener {
+            when {
+                selectionMode -> onVideoToggle?.invoke(videoIndex)
+                sortMode -> Unit
+                else -> playVideo(video)
+            }
+        }
         holder.itemView.setOnLongClickListener {
-            onVideoMenu?.invoke(videoIndex)
+            when {
+                selectionMode -> onVideoToggle?.invoke(videoIndex)
+                sortMode -> touchHelper?.startDrag(holder)
+                else -> onVideoMenu?.invoke(videoIndex)
+            }
             true
         }
+    }
+
+    /**
+     * 画勾选态：勾中项正常亮度 + 前缀「✓ 」，未勾项压暗 + 全角空格占位。
+     *
+     * 不用复选框：`cell_video_local.xml` 里那个 `checkbox_select` 会把内容整体右移，
+     * 而收藏夹多选是「压暗 + 勾号」这一套，两个页面用同一种视觉更不容易看懵。
+     *
+     * 前缀不需要剥离：每次绑定都先 setText 原始标题（[VideoItemHolder.showVideo] / 上面文件夹那行），
+     * 再进来加前缀，holder 复用不会把前缀叠起来。
+     */
+    private fun applySelection(holder: RecyclerView.ViewHolder, label: TextView, selected: Boolean) {
+        if (!selectionMode) {
+            holder.itemView.alpha = 1f
+            return
+        }
+        holder.itemView.alpha = if (selected) 1f else 0.5f
+        label.text = TextUtils.concat(if (selected) PREFIX_SELECTED else PREFIX_UNSELECTED, label.text)
     }
 
     private fun playVideo(video: LocalVideo) {
@@ -297,12 +641,17 @@ class CacheListAdapter(
 
     // ========== ViewHolder Classes ==========
 
+    /**
+     * 下载列表入口。
+     *
+     * @param clickEnabled 排序模式下传 `{ !sortMode }`：整理过程中不跳页，避免拖到一半滑走。
+     */
     class GotoHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textView: TextView = itemView.findViewById(R.id.text)
-        fun show(context: Context) {
+        fun show(context: Context, clickEnabled: () -> Boolean = { true }) {
             textView.text = UiText.of("下载列表")
             itemView.setOnClickListener {
-                context.startActivity(Intent(context, DownloadListActivity::class.java))
+                if (clickEnabled()) context.startActivity(Intent(context, DownloadListActivity::class.java))
             }
         }
     }
@@ -316,8 +665,13 @@ class CacheListAdapter(
         val text: TextView = itemView.findViewById(R.id.text)
     }
 
-    /** 空态提示行。文案写在布局里（@string/text_list_empty），不用绑定。 */
-    class EmptyTipHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+    /**
+     * 空态提示行。布局里的默认文案是 @string/text_list_empty，
+     * 搜索无结果时由 [onBindViewHolder] 换成「没有匹配的缓存」（反馈 #94）。
+     */
+    class EmptyTipHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val text: TextView = itemView.findViewById(R.id.text)
+    }
 
     class FolderItemHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val folderContent: View = itemView.findViewById(R.id.folderContent)

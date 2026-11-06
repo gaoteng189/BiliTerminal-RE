@@ -9,7 +9,6 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.text.InputFilter
 import android.text.InputType
-import android.util.DisplayMetrics
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -25,6 +24,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
 import com.RobinNotBad.BiliClient.R
 import com.RobinNotBad.BiliClient.util.view.DialogSizing
+import com.RobinNotBad.BiliClient.util.view.physicalScreenSizePx
 
 /**
  * 弹窗的唯一构造入口（终端列表方案 B，设计稿 `docs/archive/design/dialog-redesign-v2.html`）。
@@ -426,17 +426,25 @@ object TerminalDialog {
          * 的界面，低端手表上那一帧能停几百毫秒。View 在 attach 之前就能 `measure()`，不必等 show。
          */
         internal fun prepareLayout() {
-            val screen = screenSizePx(dialog.context)
+            val screen = physicalScreenSizePx(dialog.context)
             val frame = DialogSizing.available(
                 screen[0],
                 screen[1],
                 SharedPreferencesUtil.getInt(SettingsKeys.PADDING_H, 0),
                 SharedPreferencesUtil.getInt(SettingsKeys.PADDING_V, 0)
             )
-            val winW = DialogSizing.width(frame)
+            // 圆屏适配打开时再收一次：0.9 × 0.94 的框在圆形表盘上四角落在圆外，
+            // 条目越多、弹窗越高，被表盘切掉的越多（见 DialogSizing.roundBox）。
+            val box = if (SharedPreferencesUtil.getBoolean(SettingsKeys.UI_ROUND, false))
+                DialogSizing.roundBox(frame, minOf(screen[0], screen[1]))
+            else
+                DialogSizing.Box(DialogSizing.width(frame), DialogSizing.heightBudget(frame))
             // 高度只给预算（可用高度 × 94%），上下各留一点能「点外面取消」的空白。
-            val budget = DialogSizing.Frame(frame.width, DialogSizing.heightBudget(frame))
-            applyPlan(winW, DialogSizing.plan(budget, naturalScrollHeight(winW), measureParts(winW)))
+            val budget = DialogSizing.Frame(box.width, box.heightBudget)
+            applyPlan(
+                box.width,
+                DialogSizing.plan(budget, naturalScrollHeight(box.width), measureParts(box.width), box.width)
+            )
         }
 
         private fun applyPlan(winW: Int, plan: DialogSizing.Plan) {
@@ -587,30 +595,6 @@ object TerminalDialog {
                 buttonBar = heightOf(buttonBar),
                 hint = heightOf(hintView),
                 minScroll = dimen(R.dimen.dialog_item_min_height)
-            )
-        }
-
-        /**
-         * 物理屏幕尺寸（px）。
-         *
-         * **不能只用 `resources.displayMetrics`**：用户在设置里把「界面大小」调大时，
-         * `BaseActivity.setDensity()` 会走 `resources.updateConfiguration(configuration, displayMetrics)`，
-         * 有的接口版本只改 `density` 不重算 `widthPixels`/`heightPixels`（本机 SDK 32 实测：
-         * 密度放大 1.8 倍、像素尺寸不变），有的会重算——重算的那类 ROM 上「屏宽 × 0.9」
-         * 就会算出比屏幕更宽的值，低分辨率设备上弹窗右半边被切掉正是这么来的。
-         * `getRealMetrics()` 读的是显示器物理尺寸，不受应用侧密度改动影响；再与 `resources`
-         * 的窗口尺寸取小值，顺带兜住多窗口 / 系统栏。
-         */
-        @Suppress("DEPRECATION")
-        private fun screenSizePx(context: Context): IntArray {
-            val metrics = DisplayMetrics()
-            val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
-            if (windowManager != null) windowManager.defaultDisplay.getRealMetrics(metrics)
-            else metrics.setTo(context.resources.displayMetrics)
-            val window = context.resources.displayMetrics
-            return intArrayOf(
-                minOf(metrics.widthPixels, window.widthPixels),
-                minOf(metrics.heightPixels, window.heightPixels)
             )
         }
 

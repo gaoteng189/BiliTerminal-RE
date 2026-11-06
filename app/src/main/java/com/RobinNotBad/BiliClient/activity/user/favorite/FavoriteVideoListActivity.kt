@@ -5,22 +5,33 @@ import com.RobinNotBad.BiliClient.util.UiText
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import com.RobinNotBad.BiliClient.R
 import com.RobinNotBad.BiliClient.activity.base.RefreshListActivity
 import com.RobinNotBad.BiliClient.adapter.video.VideoCardAdapter
 import com.RobinNotBad.BiliClient.api.FavoriteApi
 import com.RobinNotBad.BiliClient.api.PlayerApi
+import com.RobinNotBad.BiliClient.api.SubscriptionApi
 import com.RobinNotBad.BiliClient.api.VideoInfoApi
 import com.RobinNotBad.BiliClient.model.PlayerData
 import com.RobinNotBad.BiliClient.model.VideoCard
+import com.RobinNotBad.BiliClient.model.VideoInfo
 import com.RobinNotBad.BiliClient.ui.appearance.ColorScheme
 import com.RobinNotBad.BiliClient.util.CenterThreadPool
+import com.RobinNotBad.BiliClient.util.FavoriteAggregatePolicy
+import com.RobinNotBad.BiliClient.util.FavoriteBatchDownloadPolicy
+import com.RobinNotBad.BiliClient.util.FileUtil
 import com.RobinNotBad.BiliClient.util.MsgUtil
+import com.RobinNotBad.BiliClient.util.SharedPreferencesUtil
 import com.RobinNotBad.BiliClient.util.TerminalContext
 import com.RobinNotBad.BiliClient.util.TerminalDialog
 import com.RobinNotBad.BiliClient.util.VirtualCollectionPrefs
+import com.RobinNotBad.BiliClient.util.VirtualCollectionStart
 
 class FavoriteVideoListActivity : RefreshListActivity() {
 
@@ -43,6 +54,26 @@ class FavoriteVideoListActivity : RefreshListActivity() {
 
     private var videoList: ArrayList<VideoCard> = ArrayList()
     private var videoCardAdapter: VideoCardAdapter? = null
+
+    /**
+     * 跨夹「全部收藏」聚合模式。
+     *
+     * <p>从收藏夹列表页的「全部收藏」入口进来：只读、不排序、不分页，内容由
+     * [loadAggregate] 把各收藏夹第一页取回来本地合并（服务端没有聚合接口）。
+     */
+    private var aggregateMode = false
+
+    /**
+     * 服务端搜索关键词（`x/v3/fav/resource/list` 的 `keyword` 参数）。
+     *
+     * <p>空串表示不搜索。实测关键词由服务端过滤（标题与 UP 名都参与匹配），
+     * 所以不需要「只搜已加载内容」的降级口径。
+     */
+    private var searchKeyword: String = ""
+    private var searchBar: TextView? = null
+
+    /** 多选条里的「下载」按钮（程序化加进 manageBar，见 [setupManageBar]） */
+    private var manageDownload: TextView? = null
 
     /** 当前排序（x/v3/fav/resource/list 的 order 参数） */
     private var sortOrder: String = FavoriteApi.ORDER_FAV_TIME
@@ -75,6 +106,8 @@ class FavoriteVideoListActivity : RefreshListActivity() {
         val intent = intent
         mid = intent.getLongExtra("mid", 0)
         mediaId = intent.getLongExtra("mediaId", 0)
+        // 跨夹聚合模式：只读，排序/分页/写操作入口全都不出现
+        aggregateMode = intent.getBooleanExtra("aggregate", false)
         folderName = intent.getStringExtra("name") ?: UiText.of("收藏夹")
 
         setPageName(folderName)
@@ -83,14 +116,121 @@ class FavoriteVideoListActivity : RefreshListActivity() {
 
         // 自己的收藏夹也带 mediaId（排序/复制/移动/删除都要它）；
         // readOnly 由调用方显式指定，没指定时按「有 media_id 就是他人收藏夹」兜底
-        readOnly = intent.getBooleanExtra("readOnly", mediaId > 0)
+        readOnly = intent.getBooleanExtra("readOnly", mediaId > 0) || aggregateMode
         writable = !readOnly && mediaId > 0
-        pendingSelectMode = intent.getBooleanExtra("selectMode", false)
+        pendingSelectMode = intent.getBooleanExtra("selectMode", false) && !aggregateMode
 
-        setupSortBar()
         setupManageBar()
-        setOnLoadMoreListener { page -> continueLoading(page) }
-        loadFirstPage()
+        if (aggregateMode) {
+            loadAggregate()
+        } else {
+            setupSortBar()
+            setupSubscribeBar()
+            setupSearchBar()
+            setOnLoadMoreListener { page -> continueLoading(page) }
+            loadFirstPage()
+        }
+    }
+
+    // ==================== 订阅（只读收藏夹） ====================
+
+    /** 订阅条按钮；只在「别人的收藏夹 + 已登录 + 拿得到 media_id」时创建 */
+    private var subToggle: TextView? = null
+    private var isSubscribed = false
+
+    /**
+     * 别人的收藏夹可以「订阅」。
+     *
+     * <p>当前是否已订阅查 `x/v3/fav/folder/info` 的 `fav_state`（1=已订阅）。
+     * 查询失败（未登录/接口异常）时**整条隐藏**——宁可没有入口，也不要显示一个
+     * 与实际状态不符的按钮让用户点出服务端错误。
+     */
+    private fun setupSubscribeBar() {
+        if (!readOnly || mediaId <= 0) return
+        if (SharedPreferencesUtil.getLong(SharedPreferencesUtil.mid, 0) == 0L) return
+
+        findViewById<View>(R.id.subBar).visibility = View.VISIBLE
+        subToggle = findViewById<TextView>(R.id.subToggle).also { toggle ->
+            toggle.text = getString(R.string.text_sub_toggle_loading)
+            toggle.setOnClickListener { onToggleSubscribe() }
+        }
+
+        CenterThreadPool.run {
+            try {
+                val res = SubscriptionApi.getFolderFavState(mediaId)
+                runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    if (res.first == 0) {
+                        isSubscribed = res.second == 1
+                        updateSubToggle()
+                    } else {
+                        findViewById<View>(R.id.subBar).visibility = View.GONE
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    findViewById<View>(R.id.subBar).visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    private fun updateSubToggle() {
+        subToggle?.text = getString(
+            if (isSubscribed) R.string.text_sub_toggle_subscribed else R.string.text_sub_toggle_subscribe
+        )
+    }
+
+    private fun onToggleSubscribe() {
+        if (isSubscribed) {
+            TerminalDialog.confirm(
+                context = this,
+                title = getString(R.string.pagename_dialog),
+                message = getString(R.string.msg_sub_confirm_unsub_folder),
+                onConfirm = { doSubscribeAction(false) }
+            ).show()
+        } else {
+            doSubscribeAction(true)
+        }
+    }
+
+    private fun doSubscribeAction(subscribe: Boolean) {
+        val toggle = subToggle ?: return
+        toggle.isEnabled = false
+        CenterThreadPool.run {
+            try {
+                val code = if (subscribe) {
+                    SubscriptionApi.subscribeFolder(mediaId)
+                } else {
+                    SubscriptionApi.cancelFolderSubscription(mediaId)
+                }
+                runOnUiThread {
+                    toggle.isEnabled = true
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    if (code == 0) {
+                        isSubscribed = subscribe
+                        updateSubToggle()
+                        MsgUtil.showMsg(
+                            getString(if (subscribe) R.string.msg_sub_subscribed else R.string.msg_sub_unsubscribed)
+                        )
+                    } else {
+                        MsgUtil.showMsg(subscriptionErrorText(code))
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread { toggle.isEnabled = true }
+                report(e)
+            }
+        }
+    }
+
+    private fun subscriptionErrorText(code: Int): String = when (code) {
+        -101 -> getString(R.string.msg_subscription_need_login)
+        -111 -> getString(R.string.msg_subscription_csrf_invalid)
+        -400 -> getString(R.string.msg_subscription_bad_request)
+        11010 -> getString(R.string.msg_subscription_content_gone)
+        else -> getString(R.string.msg_subscription_failed_with_code, code)
     }
 
     private fun setupSortBar() {
@@ -147,7 +287,33 @@ class FavoriteVideoListActivity : RefreshListActivity() {
         if (unselectedColor == 0) unselectedColor = manageToggle?.currentTextColor ?: unselectedColor
         manageToggle?.setOnClickListener { if (selectionMode) exitSelectionMode() else enterSelectionMode() }
         manageDelete?.setOnClickListener { confirmBatchDelete() }
+        setupDownloadButton()
         updateManageBar()
+    }
+
+    /**
+     * 多选条里的「下载」按钮。
+     *
+     * <p>程序化加进现有 `manageBar`（`activity_simple_refresh` 的公共布局），
+     * 样式从同条里的「删除」抄——写权限里没有 res/layout，而且手表屏幕上多开一行
+     * 就少一条视频。真正入队复用现有下载工程（见 [enqueueBatchDownload]）。
+     */
+    private fun setupDownloadButton() {
+        val manageBar = findViewById<LinearLayout>(R.id.manageBar) ?: return
+        val button = TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            gravity = Gravity.CENTER
+            minHeight = resources.getDimensionPixelSize(R.dimen.touch_min)
+            val padV = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, resources.displayMetrics).toInt()
+            setPadding(0, padV, 0, padV)
+            background = manageDelete?.background
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            isSingleLine = true
+            setTextColor(unselectedColor)
+            setOnClickListener { confirmBatchDownload() }
+        }
+        manageDownload = button
+        manageBar.addView(button)
     }
 
     private fun enterSelectionMode() {
@@ -158,7 +324,7 @@ class FavoriteVideoListActivity : RefreshListActivity() {
             it.notifyDataSetChanged()
         }
         updateManageBar()
-        MsgUtil.showMsg(UiText.of("点条目勾选，再点「删除」"))
+        MsgUtil.showMsg(UiText.of("点条目勾选，再点「删除」或「下载」"))
     }
 
     private fun exitSelectionMode() {
@@ -187,6 +353,10 @@ class FavoriteVideoListActivity : RefreshListActivity() {
         // 没选东西时把「删除」压暗，点了给提示而不是弹一个空确认框
         manageDelete?.alpha = if (selectedAids.isEmpty()) 0.5f else 1f
         manageDelete?.setTextColor(if (selectedAids.isEmpty()) unselectedColor else ColorScheme.PRIMARY)
+        manageDownload?.text = if (selectedAids.isEmpty()) getString(R.string.fav_port_download_entry)
+        else getString(R.string.fav_port_download_entry_count, selectedAids.size)
+        manageDownload?.alpha = if (selectedAids.isEmpty()) 0.5f else 1f
+        manageDownload?.setTextColor(if (selectedAids.isEmpty()) unselectedColor else ColorScheme.PRIMARY)
     }
 
     private fun confirmBatchDelete() {
@@ -231,9 +401,17 @@ class FavoriteVideoListActivity : RefreshListActivity() {
         if (videoList.isEmpty()) showEmptyView()
     }
 
-    /** 按当前排序拉一页（v3 接口只认 media_id，没有 media_id 就没法取内容） */
+    /** 按当前排序（+服务端关键词）拉一页（v3 接口只认 media_id，没有 media_id 就没法取内容） */
     private fun fetch(page: Int): Int =
-        if (mediaId > 0) FavoriteApi.getFolderVideosNew(mediaId, page, videoList, sortOrder) else -1
+        if (mediaId > 0) {
+            FavoriteApi.getFolderVideosNew(
+                mediaId,
+                page,
+                videoList,
+                sortOrder,
+                searchKeyword.takeIf { it.isNotEmpty() }
+            )
+        } else -1
 
     private fun loadFirstPage() {
         CenterThreadPool.run {
@@ -251,7 +429,15 @@ class FavoriteVideoListActivity : RefreshListActivity() {
                     } else {
                         videoCardAdapter!!.notifyDataSetChanged()
                     }
-                    if (videoList.isEmpty()) showEmptyView() else hideEmptyView()
+                    if (videoList.isEmpty()) {
+                        // 「搜索无结果」和「收藏夹本来就是空的」是两种状态，别让用户以为内容被清空了
+                        emptyView?.text =
+                            if (searchKeyword.isNotEmpty()) getString(R.string.fav_port_search_empty)
+                            else getString(R.string.text_list_empty)
+                        showEmptyView()
+                    } else {
+                        hideEmptyView()
+                    }
                     // 带 selectMode 进来：首屏有内容就直接进多选。空收藏夹保持空态提示，别进一个没东西可选的多选态。
                     // 标记在这里就清掉（无论是否真的进了多选），排序切换重拉第一页时才不会再次自动进多选。
                     if (pendingSelectMode) {
@@ -524,19 +710,27 @@ class FavoriteVideoListActivity : RefreshListActivity() {
                 // 构建合集的pagenames和cids
                 val pagenames = ArrayList<String>()
                 val cids = ArrayList<Long>()
-                var startPageIndex = 0
                 var firstCid: Long = 0
 
-                for ((i, v) in videoList.withIndex()) {
+                for (v in videoList) {
                     pagenames.add(v.title)
                     cids.add(v.aid) // 使用aid作为标识，实际播放时会重新获取cid
-                    if (v.aid == startAid) {
-                        startPageIndex = i
-                    }
                 }
 
-                // 获取起始视频的cid
-                val firstAid = if (startPosition < videoList.size) videoList[startPosition].aid else startAid
+                // 起播项：点击位置是权威值。原先只按 aid 反查（`v.aid == startAid`），
+                // 接口没给 id（每条 aid 都是 0）或列表里 aid 重复时会一直停在第 0 条，
+                // 表现就是"点哪条都播第一条"（反馈 #104）。定不下来时明说，不猜第 0 条。
+                val startPageIndex = VirtualCollectionStart.resolveOnline(startPosition, startAid, cids)
+                if (startPageIndex < 0) {
+                    runOnUiThread {
+                        MsgUtil.showMsg(getString(R.string.uitext_favoritevideolistactivity_025))
+                    }
+                    return@run
+                }
+
+                // 起播这条的 aid 必须与 startPageIndex 取自同一处，
+                // 否则会"选集高亮在第 3 条、实际播的是第 1 条"
+                val firstAid = videoList[startPageIndex].aid
                 val videoInfo = VideoInfoApi.getVideoInfo(firstAid)
                 if (videoInfo != null && videoInfo.cids.isNotEmpty()) {
                     firstCid = videoInfo.cids[0]
@@ -568,6 +762,10 @@ class FavoriteVideoListActivity : RefreshListActivity() {
                 // 但"这一条能不能进得去"得让播放器知道：起播这条不走播放器的 switchToOnlinePage，
                 // 它拿不到 videoInfo。上面这次请求已经拿到了，顺手带过去（省掉播放器再请求一次）。
                 playerData.enterableInfo = videoInfo
+                // 连播「按 UP 主投稿」要的是**这条视频的作者**，不是登录账号的 mid（见 PlayerData#uploaderMid）。
+                // 这条起播路径不走 VideoInfo.toPlayerData（列表是自己拼的），所以要单独补；
+                // 上面的请求已经把 videoInfo 拿在手里，不补的话播放器为点连播还得再查一次。
+                playerData.uploaderMid = videoInfo?.uploaderMid() ?: 0L
 
                 // 在主线程启动播放
                 runOnUiThread {
@@ -579,6 +777,306 @@ class FavoriteVideoListActivity : RefreshListActivity() {
                 }
             } catch (e: Exception) {
                 runOnUiThread { MsgUtil.err(e) }
+            }
+        }
+    }
+
+    // ==================== 收藏夹内搜索（服务端 keyword） ====================
+
+    /**
+     * 搜索入口：复用公共布局里的 `filterBar`。
+     *
+     * <p>收藏夹页本来不用 filterBar（它是「稍后再看」页三个筛选项专用的），这里把它显示出来、
+     * 把自带的三个筛选项隐藏，再程序化加一个占满整行的搜索项。不新增 res/layout：
+     * 写权限里没有布局目录，而且手表屏幕上多占一行就少一条视频。
+     *
+     * <p>搜索走服务端：`x/v3/fav/resource/list` 的 `keyword` 参数（实测标题与 UP 名都参与匹配、
+     * 可与 order 同时生效、分页正常），换关键词时从第一页重拉，不是本地过滤。
+     */
+    private fun setupSearchBar() {
+        val filterBar = findViewById<LinearLayout>(R.id.filterBar) ?: return
+        filterBar.visibility = View.VISIBLE
+        // filterBar 自带三项是「稍后再看」的筛选项，收藏夹页没有对应的数据含义，必须藏掉
+        findViewById<View>(R.id.filterAll)?.visibility = View.GONE
+        findViewById<View>(R.id.filterUnfinished)?.visibility = View.GONE
+        findViewById<View>(R.id.clearWatched)?.visibility = View.GONE
+
+        val bar = TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            gravity = Gravity.CENTER
+            minHeight = resources.getDimensionPixelSize(R.dimen.touch_min)
+            val padV = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, resources.displayMetrics).toInt()
+            setPadding(0, padV, 0, padV)
+            background = sortView?.background
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            isSingleLine = true
+            setOnClickListener { promptSearch() }
+        }
+        searchBar = bar
+        filterBar.addView(bar)
+        // 搜索行与排序行一起参与「列表一滚动就收起」
+        setupAutoHideBars(findViewById(R.id.filterBar), findViewById(R.id.sortBar))
+        updateSearchBar()
+    }
+
+    private fun updateSearchBar() {
+        val bar = searchBar ?: return
+        bar.text =
+            if (searchKeyword.isEmpty()) getString(R.string.fav_port_search_entry)
+            else getString(R.string.fav_port_search_active, searchKeyword)
+        bar.setTextColor(if (searchKeyword.isEmpty()) unselectedColor else ColorScheme.PRIMARY)
+    }
+
+    private fun promptSearch() {
+        if (searchKeyword.isEmpty()) showSearchInput() else showSearchMenu()
+    }
+
+    private fun showSearchInput() {
+        TerminalDialog.input(
+            context = this,
+            title = getString(R.string.fav_port_search_dialog_title),
+            hint = getString(R.string.fav_port_search_hint),
+            initialText = searchKeyword,
+            confirmText = getString(R.string.fav_port_search_confirm),
+            cancelText = getString(R.string.fav_port_search_cancel)
+        ) { keyword -> applyKeyword(keyword) }.show()
+    }
+
+    /**
+     * 已有关键词时的菜单：修改 / 清除。
+     *
+     * <p>清除不能靠「输入框留空点确定」——[TerminalDialog.input] 对空文本既不回调也不关窗。
+     */
+    private fun showSearchMenu() {
+        TerminalDialog.menu(
+            context = this,
+            title = getString(R.string.fav_port_search_current, searchKeyword),
+            items = listOf(
+                getString(R.string.fav_port_search_edit),
+                getString(R.string.fav_port_search_clear)
+            )
+        ) { which ->
+            if (which == 0) showSearchInput() else applyKeyword("")
+        }.show()
+    }
+
+    private fun applyKeyword(keyword: String) {
+        val normalized = keyword.trim()
+        if (normalized == searchKeyword) return
+        searchKeyword = normalized
+        updateSearchBar()
+        // 搜索是服务端参数，必须从第一页重拉；重拉前退出多选，避免勾选状态指向旧结果
+        if (selectionMode) exitSelectionMode()
+        expandAutoHideBars()
+        page = 1
+        bottom = false
+        videoList.clear()
+        videoCardAdapter?.notifyDataSetChanged()
+        loadFirstPage()
+    }
+
+    // ==================== 跨夹「全部收藏」聚合（只读） ====================
+
+    /**
+     * 加载跨夹聚合列表。
+     *
+     * <p>服务端没有聚合接口：`type=1`（文档里的「全部收藏夹」）在未登录 / 看别人收藏夹时
+     * 返回 `11010`，所以按「每个夹取第一页 → 本地合并」实现。夹数上限
+     * [FavoriteAggregatePolicy.DEFAULT_MAX_FOLDERS]、条数上限
+     * [FavoriteAggregatePolicy.DEFAULT_MAX_ITEMS]，合并/去重/排序规则都在该策略类里
+     * （纯函数，带 JVM 单测）。只读：不提供复制/移动/删除。
+     */
+    private fun loadAggregate() {
+        findViewById<View>(R.id.sortBar)?.visibility = View.GONE
+        setRefreshing(true)
+        CenterThreadPool.run {
+            try {
+                val folders = FavoriteApi.getFavoriteFolders(mid)
+                val pages = ArrayList<FavoriteAggregatePolicy.FolderPage>()
+                var loaded = 0
+                for (folder in folders) {
+                    if (loaded >= FavoriteAggregatePolicy.DEFAULT_MAX_FOLDERS) break
+                    if (folder.mediaId <= 0) {
+                        pages.add(
+                            FavoriteAggregatePolicy.FolderPage(folder.mediaId, folder.name, emptyList(), failed = true)
+                        )
+                        continue
+                    }
+                    loaded++
+                    try {
+                        val result = FavoriteApi.fetchFolderMedias(folder.mediaId, 1, FavoriteApi.ORDER_FAV_TIME, null)
+                        pages.add(
+                            FavoriteAggregatePolicy.FolderPage(
+                                folder.mediaId,
+                                folder.name,
+                                result.items,
+                                failed = result.code < 0
+                            )
+                        )
+                    } catch (e: Exception) {
+                        // 单个夹失败不影响整体：记一笔，最后在汇总提示里告诉用户有几个没读到
+                        Log.e("debug", "聚合收藏夹失败 mediaId=" + folder.mediaId, e)
+                        pages.add(
+                            FavoriteAggregatePolicy.FolderPage(folder.mediaId, folder.name, emptyList(), failed = true)
+                        )
+                    }
+                }
+                val merged = FavoriteAggregatePolicy.merge(pages)
+                runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    videoList.clear()
+                    merged.items.forEach { videoList.add(it.card) }
+                    if (videoCardAdapter == null) {
+                        videoCardAdapter = VideoCardAdapter(this@FavoriteVideoListActivity, videoList).also { bindAdapter(it) }
+                        setAdapter(videoCardAdapter!!)
+                    } else {
+                        videoCardAdapter!!.notifyDataSetChanged()
+                    }
+                    if (videoList.isEmpty()) {
+                        emptyView?.text = getString(R.string.fav_port_aggregate_empty)
+                        showEmptyView()
+                    } else {
+                        hideEmptyView()
+                        MsgUtil.showMsg(
+                            getString(
+                                R.string.fav_port_aggregate_summary,
+                                merged.items.size,
+                                merged.folderCount,
+                                merged.failedFolderCount
+                            )
+                        )
+                    }
+                    // 聚合只取各夹第一页，没有「更多」可加载
+                    bottom = true
+                    setRefreshing(false)
+                }
+            } catch (e: Exception) {
+                loadFail(e)
+            }
+        }
+    }
+
+    // ==================== 多选 → 批量下载（复用现有下载工程） ====================
+
+    private fun confirmBatchDownload() {
+        if (selectedAids.isEmpty()) {
+            MsgUtil.showMsg(UiText.of("先选几条吧~"))
+            return
+        }
+        val selected = videoList.filter { selectedAids.contains(it.aid) }
+        val plan = FavoriteBatchDownloadPolicy.plan(selected)
+        if (plan.cards.isEmpty()) {
+            MsgUtil.showMsg(getString(R.string.fav_port_download_no_supported))
+            return
+        }
+        val quality = FavoriteBatchDownloadPolicy.resolveQuality(
+            SharedPreferencesUtil.getString("cache_default_quality", "dialog")
+        )
+        val qualityText = when (quality) {
+            is FavoriteBatchDownloadPolicy.Quality.Highest -> getString(R.string.fav_port_download_quality_highest)
+            is FavoriteBatchDownloadPolicy.Quality.AudioOnly -> getString(R.string.fav_port_download_quality_audio)
+            is FavoriteBatchDownloadPolicy.Quality.Fixed -> getString(R.string.fav_port_download_quality_fixed, quality.qn)
+        }
+        val skipped = plan.skippedUnsupported + plan.skippedDuplicate + plan.skippedOverLimit
+        val message = getString(R.string.fav_port_download_message, plan.cards.size, qualityText) +
+                if (skipped > 0) getString(R.string.fav_port_download_skipped, skipped) else ""
+        TerminalDialog.confirm(
+            context = this,
+            title = getString(R.string.fav_port_download_title),
+            message = message,
+            confirmText = getString(R.string.fav_port_download_confirm),
+            confirmIsDanger = false
+        ) {
+            enqueueBatchDownload(plan.cards, quality)
+        }.show()
+    }
+
+    /**
+     * 逐条提交下载。
+     *
+     * <p>不重新实现下载：与列表长按「快速缓存」（[com.RobinNotBad.BiliClient.adapter.video.VideoQuickCache]）
+     * 走同一组原语 `PlayerApi.getVideo` / `getVideoDash` / `startDownloading` /
+     * `startDownloadingAudioOnly`，失败就跳过并在汇总里计数。
+     * 提交前先退出多选，避免用户盯着一个正在变动的勾选态。
+     *
+     * @param cards   已按策略去重、截断的计划
+     * @param quality 清晰度策略（dialog 在批量场景按「最高可用」处理，见策略类）
+     */
+    private fun enqueueBatchDownload(cards: List<VideoCard>, quality: FavoriteBatchDownloadPolicy.Quality) {
+        // 目录不可用就整批取消，否则每条都会失败并弹一串提示
+        if (FileUtil.resolveVideoDownloadDir(this) == null) {
+            MsgUtil.showMsg(getString(R.string.fav_port_download_dir_failed))
+            return
+        }
+        MsgUtil.showMsg(getString(R.string.fav_port_download_starting, cards.size))
+        exitSelectionMode()
+        CenterThreadPool.run {
+            var queued = 0
+            var cached = 0
+            var failed = 0
+            for (card in cards) {
+                try {
+                    val info: VideoInfo?
+                    if (card.aid != 0L) {
+                        info = VideoInfoApi.getVideoInfo(card.aid)
+                    } else {
+                        info = VideoInfoApi.getVideoInfo(card.bvid)
+                    }
+                    if (info == null) {
+                        failed++
+                        continue
+                    }
+                    if (FileUtil.isVideoCached(info.title)) {
+                        cached++
+                        continue
+                    }
+                    when (quality) {
+                        is FavoriteBatchDownloadPolicy.Quality.Highest -> {
+                            val playerData = info.toPlayerData(0)
+                            PlayerApi.getVideo(playerData, true)
+                            val qnValues = playerData.qnValueList
+                            if (qnValues == null || qnValues.isEmpty()) {
+                                failed++
+                                continue
+                            }
+                            PlayerApi.startDownloading(info, 0, qnValues.max())
+                            queued++
+                        }
+
+                        is FavoriteBatchDownloadPolicy.Quality.AudioOnly -> {
+                            val playerData = info.toPlayerData(0)
+                            PlayerApi.getVideo(playerData, true)
+                            val qnValues = playerData.qnValueList
+                            if (qnValues == null || qnValues.isEmpty()) {
+                                failed++
+                                continue
+                            }
+                            PlayerApi.getVideoDash(playerData)
+                            val audioUrl = playerData.audioUrl
+                            if (audioUrl.isNullOrEmpty()) {
+                                failed++
+                                continue
+                            }
+                            PlayerApi.startDownloadingAudioOnly(info, 0, qnValues[0], audioUrl)
+                            queued++
+                        }
+
+                        is FavoriteBatchDownloadPolicy.Quality.Fixed -> {
+                            PlayerApi.startDownloading(info, 0, quality.qn)
+                            queued++
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("debug", "批量下载提交失败 aid=" + card.aid, e)
+                    failed++
+                }
+            }
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                MsgUtil.showMsg(
+                    if (queued == 0) getString(R.string.fav_port_download_none)
+                    else getString(R.string.fav_port_download_summary, queued, cached, failed)
+                )
             }
         }
     }

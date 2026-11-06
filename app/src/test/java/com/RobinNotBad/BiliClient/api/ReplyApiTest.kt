@@ -1,5 +1,6 @@
 package com.RobinNotBad.BiliClient.api
 
+import com.RobinNotBad.BiliClient.model.Reply
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -199,5 +200,92 @@ class ReplyApiTest {
         assertEquals("http://i0.hdslb.com/2.png", array.getJSONObject(1).getString("img_src"))
         assertEquals("http://i0.hdslb.com/3.png", array.getJSONObject(2).getString("img_src"))
         assertEquals("2.5 不能被截断", 2.5, array.getJSONObject(1).getDouble("img_size"), 0.000001)
+    }
+
+    // ---- 图床 biz：评论图必须与动态图同一个目录 ----
+
+    @Test
+    fun imageBiz_commentSharesDynamicDirectoryAndMessageUsesIm() {
+        // 图床 biz 只决定图片落在哪个 BFS 目录：
+        // - 动态图与评论图都是 /bfs/new_dyn/（评论的 pictures 只认这个目录下的图；
+        //   26.10.02 曾自造 new_reply，图能传上去但发评论被服务端以 12066 拒绝）
+        // - 私信图是 /bfs/im/（上游 PiliPlus 同样传 biz:'im'）
+        assertEquals("评论图与动态图必须共用 new_dyn", "new_dyn", ReplyApi.BIZ_DYNAMIC)
+        assertEquals("私信图走 IM 图床目录", "im", ReplyApi.BIZ_MESSAGE)
+    }
+
+    // ---- 发送后「评论区是否已能查到」（反馈 #85） ----
+
+    private fun reply(rpid: Long) = Reply().apply { this.rpid = rpid }
+
+    @Test
+    fun containsReplyId_findsTopLevelReply() {
+        val list = listOf(reply(100), reply(200))
+        assertTrue("一级评论就在列表里", ReplyApi.containsReplyId(list, 200))
+    }
+
+    @Test
+    fun containsReplyId_findsReplyInsideChildList() {
+        // 楼中楼里新发的回复同样要能认出来，不能只看顶层
+        val parent = reply(100).apply { childMsgList.add(reply(101)) }
+        assertTrue("楼中楼里的 rpid 也算查到", ReplyApi.containsReplyId(listOf(parent), 101))
+    }
+
+    @Test
+    fun containsReplyId_absentReturnsFalse() {
+        assertFalse("列表里没有就是没查到", ReplyApi.containsReplyId(listOf(reply(100)), 999))
+    }
+
+    @Test
+    fun containsReplyId_toleratesNullAndInvalidInput() {
+        // 脏数据 / 非法入参不能崩：这条判定跑在"发送评论"的主路径上
+        assertFalse("null 列表", ReplyApi.containsReplyId(null, 100))
+        assertFalse("rpid 非法时不查", ReplyApi.containsReplyId(listOf(reply(100)), 0))
+        assertFalse("空列表", ReplyApi.containsReplyId(emptyList(), 100))
+    }
+
+    // ---- 跨页去重（ReplyApi.filterDuplicateReplies，三层兜底的第 1 层） ----
+
+    private fun seenOf(vararg rpids: Long): MutableSet<Long> {
+        val seen = java.util.HashSet<Long>()
+        for (rpid in rpids) if (rpid > 0) seen.add(rpid)
+        return seen
+    }
+
+    @Test
+    fun filterDuplicateReplies_removesRepeatsAndKeepsFirstOccurrenceOrder() {
+        val seen = seenOf(100)
+        val incoming = arrayListOf(reply(100), reply(200), reply(200), reply(300))
+        assertEquals("删掉 2 条重复", 2, ReplyApi.filterDuplicateReplies(incoming, seen))
+        assertEquals("seen 里已有的 100 与同页重复的第二个 200 都被删掉，剩下保持首次出现顺序", listOf(200L, 300L), incoming.map { it.rpid })
+    }
+
+    @Test
+    fun filterDuplicateReplies_registersFirstTimersInSeen() {
+        val seen = java.util.HashSet<Long>()
+        val incoming = arrayListOf(reply(1), reply(2))
+        ReplyApi.filterDuplicateReplies(incoming, seen)
+        assertEquals("首次出现的 rpid 要登记，翻页时才不会再放进来", setOf(1L, 2L), seen)
+    }
+
+    @Test
+    fun filterDuplicateReplies_dropsNullEntries() {
+        val incoming = arrayListOf(reply(1), null, reply(2))
+        assertEquals("null 是脏数据，必须一起清掉（后面按字段访问会 NPE）", 1, ReplyApi.filterDuplicateReplies(incoming, java.util.HashSet()))
+        assertEquals(listOf(1L, 2L), incoming.map { it!!.rpid })
+    }
+
+    @Test
+    fun filterDuplicateReplies_keepsInvalidRpidAndDoesNotRegisterIt() {
+        val seen = java.util.HashSet<Long>()
+        val incoming = arrayListOf(reply(0), reply(-5), reply(7))
+        assertEquals("rpid 非法既不删也不登记", 0, ReplyApi.filterDuplicateReplies(incoming, seen))
+        assertEquals("非法 rpid 不能进 seen，否则以后所有脏数据都被判成重复", setOf(7L), seen)
+    }
+
+    @Test
+    fun filterDuplicateReplies_toleratesEmptyInput() {
+        assertEquals("null 列表", 0, ReplyApi.filterDuplicateReplies(null, java.util.HashSet()))
+        assertEquals("空列表", 0, ReplyApi.filterDuplicateReplies(ArrayList(), java.util.HashSet()))
     }
 }

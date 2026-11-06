@@ -48,6 +48,20 @@ public class NetWorkUtil {
     private static volatile String cachedCookies = null;
 
     /**
+     * 账号代际（审计 §7.1「切号没有 Cookie 代际隔离」）。
+     *
+     * <p>问题：切号 / 重新登录时只换了 SP 里的 Cookie 字符串，但**旧账号还在飞的请求**回来时，
+     * 拦截器照样把它的 Set-Cookie 合并进存储——于是新账号的 SESSDATA 被旧账号的覆盖，
+     * csrf 快照被改成旧账号的 bili_jct，表现为「切完号偶尔又变回上一个人 / 发评论 -111」。
+     *
+     * <p>做法：每次全局登录态被替换（切号、登录完成、退出登录）就把代际 +1；
+     * 每个请求在**创建时**打上当时的代际标签（{@link Request.Builder#tag(Class, Object)}），
+     * 响应回来要写 Cookie 前在**同一把锁里**再比一次：代际不同就整个丢弃。
+     * 锁保证「比代际 + 写 Cookie」与「升代际 + 写新 Cookie」互斥，不存在写了一半的中间态。
+     */
+    private static volatile long accountGeneration = 0L;
+
+    /**
      * HTTP 追踪总开关（26.10.14，由 [com.RobinNotBad.BiliClient.BiliTerminal.applyLogSwitches] 写入）。
      *
      * <p>原实现只在 `get()` / `post()` 里记 URL 和 POST 正文，**不记状态码、不记响应体、不记耗时**：
@@ -128,6 +142,63 @@ public class NetWorkUtil {
         SharedPreferencesUtil.putString(SharedPreferencesUtil.cookies, cookies);
         cachedCookies = cookies;
         refreshHeaders();
+    }
+
+    /** 当前账号代际；请求创建时打标签、响应落盘前用它判断是否已经过期。 */
+    public static long getAccountGeneration() {
+        return accountGeneration;
+    }
+
+    /**
+     * 代际 +1，让所有在飞的旧请求失效（不写 Cookie）。
+     *
+     * <p>真的换 Cookie 请直接调 {@link #applyAccountCookies(String)}——它把「升代际」和
+     * 「写新 Cookie」放在同一把锁里，避免旧响应在两步之间挤进来写回旧值。
+     */
+    public static void bumpAccountGeneration() {
+        synchronized (NetWorkUtil.class) {
+            accountGeneration++;
+        }
+    }
+
+    /**
+     * 原子地替换整套 Cookie：升代际 + 写新值 + 刷新请求头，全部在同一把锁内完成。
+     *
+     * <p>登录完成、切号、退出登录都必须走这里，而不是 {@link #setCookiesString(String)}：
+     * 后者不升代际，旧账号在飞的响应回来还能把 Cookie 写回去。
+     *
+     * @param cookies 新账号的完整 Cookie 字符串，退出登录时传空串
+     */
+    public static void applyAccountCookies(String cookies) {
+        synchronized (NetWorkUtil.class) {
+            accountGeneration++;
+            SharedPreferencesUtil.putString(SharedPreferencesUtil.cookies, cookies == null ? "" : cookies);
+            cachedCookies = cookies == null ? "" : cookies;
+            refreshHeaders();
+        }
+    }
+
+    /**
+     * 创建带账号代际标签的请求构造器。
+     *
+     * <p>**所有**出口请求都必须从这里构造：响应回来时 {@link #saveCookiesFromResponse(Response)}
+     * 靠这个标签判断它是不是上一任账号的「在飞请求」，是就丢弃 Set-Cookie（审计 §7.1）。
+     * 新增请求入口时漏掉这一行，代际隔离对那条请求就失效了。
+     */
+    private static Request.Builder newTaggedRequestBuilder() {
+        // 注意这里是 new Request.Builder()，不是递归调自己——之前把全文件的
+        // `new Request.Builder()` 无脑替换成本方法时，把方法体里这一行也替换了
+        return new Request.Builder().tag(Long.class, accountGeneration);
+    }
+
+    /**
+     * 判断一条响应对应的请求是否属于「已经过去的账号代际」。
+     *
+     * <p>没有打标签的请求（理论上不该有，兜底按当前代际处理）当新请求放行。
+     * 抽成纯函数是为了能在 JVM 单测里覆盖，不用起 OkHttp。
+     */
+    static boolean isStaleGeneration(Long requestGeneration, long currentGeneration) {
+        return requestGeneration != null && requestGeneration != currentGeneration;
     }
 
     public static class Inet4Selector implements Dns {
@@ -320,6 +391,14 @@ public class NetWorkUtil {
                 else throw new JSONException("在访问" + url + "时返回数据为空");
             }
             int code = json.optInt("code", 0);
+            // #60：统一响应入口识别「账号未登录 / 登录态过期」（-101）。这里**只打标记**，
+            // 真正的刷新由 CookieRefreshScheduler 按节流策略派到后台线程池执行——当前线程是
+            // 调用方的请求线程，在这里嵌套发起刷新会拖慢本次调用，也可能让一次性 refresh_token
+            // 被并发轮换。只认「带着 SESSDATA 的请求仍被回 -101」：未登录 / 隐私模式本来就用
+            // 游客 Cookie，那种 -101 是预期内的，不该触发登录态刷新。
+            if (code == -101 && carriesSessionCookie(headers)) {
+                CookieRefreshScheduler.onLoginExpired();
+            }
             if (code != -352 && code != -412) {
                 return json;
             }
@@ -337,13 +416,34 @@ public class NetWorkUtil {
     }
 
     /**
+     * 这次请求的 Cookie 里是否带着登录态（SESSDATA）。
+     *
+     * <p>用途：判断一个 `code=-101` 到底是不是「登录态过期了」。#60 的轻量钩子只在
+     * 「我们明明带着 SESSDATA 去请求，服务端还说未登录」时才标记需要刷新；未登录用户与
+     * 隐私模式（{@link #buildGuestCookieString(String)} 会剔除登录 Cookie）的 -101 都是预期内的。
+     *
+     * @param headers 与 {@link #getJson(String, ArrayList)} 同格式的键值对列表（name, value, name, value…）
+     */
+    private static boolean carriesSessionCookie(ArrayList<String> headers) {
+        if (headers == null) return false;
+        for (int i = 0; i + 1 < headers.size(); i += 2) {
+            String name = headers.get(i);
+            if (name == null || !"Cookie".equalsIgnoreCase(name)) continue;
+            String cookie = headers.get(i + 1);
+            return cookie != null && !cookie.isEmpty()
+                    && !getInfoFromCookie("SESSDATA", cookie).isEmpty();
+        }
+        return false;
+    }
+
+    /**
      * {@link #getJsonOnce(String)} 的实现：**单次直连**，不经过 {@link #executeWithDoctypeRetry}。
      *
      * 直接用 OkHttp 发一次，是为了让风控回退链路真的只产生一个请求（见 {@link #getJsonOnce}）。
      */
     private static JSONObject executeJsonOnce(String url, ArrayList<String> headers) throws IOException, JSONException {
         Logu.d("get-url", url);
-        Request.Builder requestBuilder = new Request.Builder().url(url).get();
+        Request.Builder requestBuilder = newTaggedRequestBuilder().url(url).get();
         for (int i = 0; i < headers.size(); i += 2)
             requestBuilder.addHeader(headers.get(i), headers.get(i + 1));
         try (Response response = getOkHttpInstance().newCall(requestBuilder.build()).execute()) {
@@ -367,7 +467,7 @@ public class NetWorkUtil {
     public static Response getHtml(String url) throws IOException {
         Logu.d("get-url", url);
         OkHttpClient client = getOkHttpInstance();
-        Request.Builder requestBuilder = new Request.Builder().url(url).get();
+        Request.Builder requestBuilder = newTaggedRequestBuilder().url(url).get();
         for (int i = 0; i < webHeaders.size(); i += 2)
             requestBuilder.addHeader(webHeaders.get(i), webHeaders.get(i + 1));
         Response response = client.newCall(requestBuilder.build()).execute();
@@ -382,7 +482,7 @@ public class NetWorkUtil {
     public static Response get(String url, ArrayList<String> headers, RedirectHandler redirectHandler) throws IOException {
         Logu.d("get-url", url);
         OkHttpClient client = getOkHttpInstance();
-        Request.Builder requestBuilder = new Request.Builder().url(url).get();
+        Request.Builder requestBuilder = newTaggedRequestBuilder().url(url).get();
         for (int i = 0; i < headers.size(); i += 2)
             requestBuilder.addHeader(headers.get(i), headers.get(i + 1));
         if (redirectHandler != null) requestBuilder.tag(RedirectHandler.class, redirectHandler);
@@ -465,7 +565,7 @@ public class NetWorkUtil {
         Logu.d("post-data", data == null ? "null" : ("length=" + data.length()));
         OkHttpClient client = getOkHttpInstance();
         RequestBody body = RequestBody.create(MediaType.parse(contentType + "; charset=utf-8"), data);
-        Request.Builder requestBuilder = new Request.Builder().url(url).post(body);
+        Request.Builder requestBuilder = newTaggedRequestBuilder().url(url).post(body);
         for (int i = 0; i < headers.size(); i += 2) {
             String key = headers.get(i);
             String val = headers.get(i + 1);
@@ -569,16 +669,34 @@ public class NetWorkUtil {
 
         //如果没有新cookies，直接返回
         if (newCookies.isEmpty()) return;
+        // 审计 §7.1：这条响应发出的那一刻属于哪个账号代际？标签在请求创建时打上（见
+        // newTaggedRequestBuilder），此处必须**在锁内**比较——锁外比完再进锁，
+        // 中间完全可能插进一次切号，那这次比较就白做了。
+        Long requestGeneration = response.request().tag(Long.class);
         // 本方法由 CookieSaveInterceptor 在任意线程调用，必须与 putCookie/setCookies/getCookies
         // 共用同一把锁，否则 read-modify-write 互相覆盖会导致偶发登录态丢失。
         synchronized (NetWorkUtil.class) {
+            if (isStaleGeneration(requestGeneration, accountGeneration)) {
+                // 只记代际数字，不记 Cookie 键值（审计 S2）
+                Logu.d("saveCookiesFromResponse", "丢弃旧账号代际的 Set-Cookie：req="
+                        + requestGeneration + " cur=" + accountGeneration);
+                return;
+            }
             saveCookiesLocked(newCookies, responseHost);
         }
     }
 
     private static void saveCookiesLocked(List<String> newCookies, String responseHost) {
+        // 26.11.06.1：SharedPreferences 还没就绪时**绝不能落盘**。此时 getCachedCookies() 读到的是
+        // 空串（Application.onCreate 尚未给它赋值），拿空串当底合并出来的 Cookie 会丢掉
+        // SESSDATA / DedeUserID —— 等于把登录态写没了，下一次冷启动就成了「掉登录」。
+        // 宁可丢掉这一次响应下发的 Set-Cookie（下次请求服务端会重发）。
+        if (SharedPreferencesUtil.sharedPreferences == null) {
+            Logu.d("newCookie", "SharedPreferences 未就绪，丢弃本次 Set-Cookie（避免写丢登录态）");
+            return;
+        }
         String cookiesStr = getCachedCookies();
-        ArrayList<String> oldCookies = (cookiesStr.equals("") ? new ArrayList<>() : new ArrayList<>(Arrays.asList(cookiesStr.split("; "))));  //转list
+        ArrayList<String> acceptedHeaders = new ArrayList<>(newCookies.size());
 
         for (String newCookie : newCookies) {  //对每一条新cookie遍历
 
@@ -592,50 +710,33 @@ public class NetWorkUtil {
                 continue;
             }
 
-            int index = newCookie.indexOf("; ");
-            if (index != -1) newCookie = newCookie.substring(0, index);  //如果没有分号不做处理
-
-            index = newCookie.indexOf("=") + 1;
-            if (index == 0) continue;   //如果没有等号，跳过
-
-            String key = newCookie.substring(0, index);    //key=
-            // 只记录 Cookie 键名，绝不记录值：轮换后的 SESSDATA/bili_jct 等本身就是登录凭证，
-            // 写进日志等于把会话明文留在了设备与 logcat 里（审计 S2）
-            Logu.d("newCookie", newCookie.substring(0, Math.max(key.length() - 1, 0)));
-
-            boolean added = false;
-            for (int i = 0; i < oldCookies.size(); i++) {  //查找旧cookie表有没有
-                String oldCookie = oldCookies.get(i);
-                if (oldCookie.contains(key)) {
-                    oldCookies.set(i, newCookie);    //有的话直接换掉
-                    added = true;
-                    break;
-                }
-            }
-            if (!added) {
-                oldCookies.add(newCookie);  //没有就加项
-            }
+            acceptedHeaders.add(newCookie);
         }
 
-        StringBuilder setCookies = new StringBuilder();
-        for (String setCookie : oldCookies) {
-            setCookies.append(setCookie).append("; ");
+        // 解析与合并交给纯策略 CookieJarPolicy（有 JVM 单测）：
+        // · 属性按 ';' 切（不再只认 "; "），不会被 `Domain=` 之类属性污染值；
+        // · SESSDATA / bili_jct / DedeUserID 等**登录凭据不接受删除或清空**——Cookie 刷新接口
+        //   成功后会下发新 SESSDATA，确认接口才让旧 Cookie 失效；若这里把凭据按空值覆盖，
+        //   本地就变成「没有 SESSDATA」，下次启动直接判登录过期（掉登录）；
+        // · 空值写入一律忽略，非凭据键的 Max-Age=0 / Expires 过期正常删除。
+        CookieJarPolicy.MergeResult merged =
+                CookieJarPolicy.merge(cookiesStr, CookieJarPolicy.parseAll(acceptedHeaders));
+        if (!merged.getProtectedKeys().isEmpty()) {
+            // 只记键名，不记值（这些就是凭据本身，审计 S2）
+            Logu.d("newCookie", "拒绝删除/清空登录凭据：" + merged.getProtectedKeys());
         }
-        //如果一次setCookies都没有，就不要存了， 因为是个空字符串
-        if (setCookies.length() >= 2) {
-            String result = setCookies.substring(0, setCookies.length() - 2);
-            if (!result.equals(cookiesStr)) {
-                SharedPreferencesUtil.putString(SharedPreferencesUtil.cookies, result);
-                cachedCookies = result;
-                refreshHeaders();
-                // 这里也是 bili_jct 轮换的唯一落点：顺手同步 csrf 快照，否则所有读快照的 POST
-                // 都会静默拿 -111（详见 currentCsrf() 的说明）。只在值真的变了时才写，避免每次
-                // 响应都多一次 SharedPreferences 写入。
-                String liveJct = getInfoFromCookie("bili_jct", result);
-                if (!liveJct.isEmpty()
-                        && !liveJct.equals(SharedPreferencesUtil.getString(SharedPreferencesUtil.csrf, ""))) {
-                    SharedPreferencesUtil.putString(SharedPreferencesUtil.csrf, liveJct);
-                }
+        String result = merged.getCookies();
+        if (!result.equals(cookiesStr)) {
+            SharedPreferencesUtil.putString(SharedPreferencesUtil.cookies, result);
+            cachedCookies = result;
+            refreshHeaders();
+            // 这里也是 bili_jct 轮换的唯一落点：顺手同步 csrf 快照，否则所有读快照的 POST
+            // 都会静默拿 -111（详见 currentCsrf() 的说明）。只在值真的变了时才写，避免每次
+            // 响应都多一次 SharedPreferences 写入。
+            String liveJct = getInfoFromCookie("bili_jct", result);
+            if (!liveJct.isEmpty()
+                    && !liveJct.equals(SharedPreferencesUtil.getString(SharedPreferencesUtil.csrf, ""))) {
+                SharedPreferencesUtil.putString(SharedPreferencesUtil.csrf, liveJct);
             }
         }
     }
@@ -648,6 +749,12 @@ public class NetWorkUtil {
      */
     public static void putCookie(String key, String val) {
         synchronized (NetWorkUtil.class) {
+            // 与 saveCookiesLocked 同因：SharedPreferences 未就绪时读到的 Cookie 是空串，
+            // 拿它当底写回会丢掉 SESSDATA 等登录凭据（26.11.06.1 掉登录返工）
+            if (SharedPreferencesUtil.sharedPreferences == null) {
+                Logu.d("putCookie", "SharedPreferences 未就绪，跳过写入 " + key);
+                return;
+            }
             Cookies cookies = new Cookies(getCachedCookies());
             cookies.set(key, val);
             String result = cookies.toString();

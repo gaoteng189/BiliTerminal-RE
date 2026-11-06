@@ -14,7 +14,7 @@
     <string name="title_opensource_license">开源协议</string>
     <string name="title_opensource_thanks">借鉴的项目与第三方库</string>
     <string name="title_opensource_icon">开源图标许可</string>
-    <string name="about_source">本程序使用或借鉴了下列项目的部分代码及其合法收集的API：\nWearBili：https://github.com/SpaceXC/WearBili\n腕上哔哩：https://github.com/luern0313/WristBilibili\nBAC Document：https://socialsisteryi.github.io/bilibili-API-collect\n小电视播放器：https://github.com/xinxiangshiicheng/xinxiangshicheng_wearbili_player\n程序的界面借鉴于WearBili的UI部分，设计者为@JesseGary_（已得到授权）\n\n本程序使用的第三方库：\nOkHttp：com.squareup.okhttp3:okhttp\nGlide：com.github.bumptech.glide:glide\nPhotoView：com.github.chrisbanes:PhotoView\nJsoup：org.jsoup:jsoup\nEventBus：org.greenrobot:eventbus\nIJKPlayer：https://github.com/bilibili/ijkplayer\nDanmakuFlameMaster：com.github.ctiao:DanmakuFlameMaster\nGeetest：com.geetest.sensebot:sensebot\nAOSP：https://source.android.google.cn/\n\n软件图标提供者：银狐enlab（原图来自B站）\n其他部分图标来自网络，有修改，版权归原作者所有，如有侵权，请联系开发组删除。</string>
+    <string name="about_source">本程序使用或借鉴了下列项目的部分代码及其合法收集的API：\nWearBili：https://github.com/SpaceXC/WearBili\n腕上哔哩：https://github.com/luern0313/WristBilibili\nBAC Document：https://socialsisteryi.github.io/bilibili-API-collect\n小电视播放器：https://github.com/xinxiangshiicheng/xinxiangshicheng_wearbili_player\nKazumi：https://github.com/Predidit/Kazumi\n程序的界面借鉴于WearBili的UI部分，设计者为@JesseGary_（已得到授权）\n\n本程序使用的第三方库：\nOkHttp：com.squareup.okhttp3:okhttp\nGlide：com.github.bumptech.glide:glide\nPhotoView：com.github.chrisbanes:PhotoView\nJsoup：org.jsoup:jsoup\nEventBus：org.greenrobot:eventbus\nIJKPlayer：https://github.com/bilibili/ijkplayer\nDanmakuFlameMaster：com.github.ctiao:DanmakuFlameMaster\nGeetest：com.geetest.sensebot:sensebot\nAOSP：https://source.android.google.cn/\n\n软件图标提供者：银狐enlab（原图来自B站）\n其他部分图标来自网络，有修改，版权归原作者所有，如有侵权，请联系开发组删除。</string>
 
     # 旧的免责声明
     <string name="about_to_uncle">本软件开发的目的是使配置较低的安卓手表与老旧手机能够使用B站网页端提供的部分基本功能。本软件基于B站网页端接口运行，不会对任何接口进行恶意轰炸。软件默认开启一项匿名的使用统计（只包含随机生成的安装号、版本号与机型，不含账号、Cookie；为在同一台设备同时安装普通版与共存版时不重复计数，另有一个由系统匿名标识派生、不可逆的哈希短串，仅用于设备去重），你可以在「设置 - 关于与帮助」中随时关闭，关闭后不再上报；崩溃时也会自动上报一份错误报告，同样可以关闭；崩溃页与反馈页另提供「附带应用日志」的选项（默认分别为勾选 / 不勾选，可自行更改），日志在写入前已做脱敏——登录凭据这类敏感参数的值会被替换成占位符，不会明文外发。软件不存在付费功能，代码完全开源，收到的捐赠仅用于软件服务器的日常维护。如果您仍然认为本软件侵犯了您的权利，请联系我们（有事好商量呜呜呜）\n同时，我们也不对学生用户在不恰当的时间、地点使用本软件导致的财产损失（设备被没收）或精神伤害（？）负责。请尽量自控，不要影响到自己的学习和生活哦！</string>
@@ -46,8 +46,8 @@
     <string name="egg_zisekongling_nahida">你知道吗，RE:哔哩终端的作者和哔哩终端的作者Robin一样，喜欢纳西妲\n我语文也不是很好，不太会写这种文案hhh\n纳西妲是一个很可爱的小萝莉\n她的经历与自身的性格形成了很大的反差\n被囚禁500年，到最后被迫忘记了大慈树王\n我记得很清楚，她亲手抹除大慈树王存在的时候是哭着的，但当她从世界树里出来的时候\n她却不知道为什么要哭......那个滋味......让我这个坐在屏幕外的玩家都不由得心酸起来......\n但是——她依旧保持自己的童心与坚韧的性格，在治理好须弥的同时，又获得了民众和众神的认可，真的很不容易\n纳西妲不必成为大慈树王，又或者......在抹除了大慈树王存在的世界线里，她即是大慈树王\n这种成年人的责任和童心的反差，正是他与其他角色的不同之处。\n所以——纳西妲，请你继续好好生活下去\nemm....逻辑可能有些混乱哈，，，我又瞎感慨了hhh。不打扰你看视频了哈\n会见~</string>
     <string name="egg_robin_nahida">Robin喜欢纳西妲。\n也许不只是由于外表的可爱，还有对遭遇的同情。\n\n我们都被囚禁——\n纳西妲是物理上的，\n屏幕前后的你我则是心灵上的。\n\n纳西妲已经遇到了她的旅行者，\n但我们，又会有谁来关心呢……？\n\n*纳西妲：\n不要这样说哦。\n能够拯救你们的，正是你们自己。\n请用自己的行动，来努力改变这个不美好的世界。\n无论结果如何。\n\n此彩蛋的触发方式：搜索关键词中同时包含"Robin"和"纳西妲"</string>
 
-    <string name="special_login_desc">该功能是为安卓版本过低导致二维码生成组件无法工作的设备准备的，你需要手动在此页面导入登录信息来完成登录操作。\n该功能也适用于快速登录原有账号。\n\n方法教学：\n你需要在另外一台至少为安卓4.4的设备上安装哔哩终端并扫码登录，然后在那台设备上点击设置中的“查看登录信息”，将显示出来的登录信息复制到下方的文本框中，检查无误后点击“登录”按钮即可。\n提示：可以将登录信息复制到一个txt中，用电脑usb传给这台设备。若提示输入有误，请检查是否有多余或缺失字符。\n\n注意：登录数据录入完成后，请在另一台设备上直接【清除APP数据】或【卸载】，不要点击【退出登录】！</string>
-    <string name="special_login_export">以下是你的登录信息，可用于在其他设备上特殊登录，点击最下面的按钮可以复制。\n登录信息具有一定的时效性，请即取即用，导入完成请将此设备的哔哩终端清除数据。（不要点退出登录！）\n请勿将此页面的信息传给别人，以防盗号！</string>
+    <string name="special_login_desc">该功能是为安卓版本过低导致二维码生成组件无法工作的设备准备的，你需要手动在此页面导入登录信息来完成登录操作。\n该功能也适用于快速登录原有账号。\n\n方法教学：\n你需要在另外一台至少为安卓4.4的设备上安装哔哩终端并扫码登录，然后在那台设备上点击设置中的“查看登录信息”，将显示出来的登录信息复制到下方的文本框中，检查无误后点击“登录”按钮即可。\n提示：可以将登录信息复制到一个txt中，用电脑usb传给这台设备。若提示输入有误，请检查是否有多余或缺失字符。\n\n多账号：如果粘贴的是另一台设备「查看登录信息」页里导出的全部账号数据，会一次性导入所有账号。导入多账号不会切换当前账号，导入后请到「账号切换」里选择要用的账号。\n\n注意：登录数据录入完成后，请在另一台设备上直接【清除APP数据】或【卸载】，不要点击【退出登录】！</string>
+    <string name="special_login_export">以下是本机所有已保存账号的登录信息（多账号格式），可用于在其他设备上一次性导入全部账号；也可只复制其中一个账号的 JSON 做单账号登录。\n导入多账号数据不会切换当前账号，导入后请到「账号切换」里选择要用的账号。\n登录信息具有一定的时效性，请即取即用，导入完成请将此设备的哔哩终端清除数据。（不要点退出登录！）\n请勿将此页面的信息传给别人，以防盗号！</string>
 
     <string name="setting_lab_ui_landscape">！此功能将不再继续进行改进，除非开发者有时间！\n开启选项后，软件将会变为横屏，部分列表会变为三列，更适合平板等默认横屏的设备\n*注意：部分页面仍为单列式，可能有一些页面适配不佳，电视请移步官方电视版本或使用其他第三方软件。</string>
     <string name="setting_lab_ui_rotatory">默认情况下此选项无需开启，系统会自动为可滚动列表应用表冠操作，如果表冠未生效或需要自定义灵敏度，可尝试开启此选项。\n开启后可能会丢失表冠震动。\n下面的两项为灵敏度倍数，1.0 即系统原始滚动量，默认 1.0;填 0 等于该类页面不响应表冠。\n改完立即生效，无需重进页面。</string>
@@ -146,7 +146,7 @@
     <string name="player_package_aliang">com.aliangmaker.media</string>
     <string name="player_package_mtv">com.xinxiangshicheng.wearbiliplayer.cn</string>
 
-    <string name="desc_back_disable">有一些手表（例如米兔等）是通过模拟按下返回键自行实现的右滑返回，若你在左右翻页时因触发滑动返回而退出页面，请开启此开关\n开启后，其他设备上则为按下返回键也不退出页面，并且右滑退出后会卡住。\n你可以使用菜单最下方的退出按钮结束本软件。\n正常用户无需打开。</string>
+    <string name="desc_back_disable">有一些手表（例如米兔等）是通过模拟按下返回键自行实现的右滑返回，若你在左右翻页时因触发滑动返回而退出页面，请开启此开关\n开启后，其他设备上则为按下返回键也不退出页面，并且右滑退出后会卡住。\n你可以使用菜单里的退出按钮结束本软件。\n正常用户无需打开。</string>
     <string name="desc_fav_single">打开此选项，添加收藏后即退出收藏页面，取消收藏不自动退出。</string>
     <string name="desc_fav_notice">打开此选项，退出收藏页面会提示收藏成功。\n但其实在你框选了收藏夹的时候就已经收藏了，这个选项只是为了看上去放心（</string>
     <string name="desc_cover_play">打开此选项，点击封面将播放视频，否则将查看大图。</string>
@@ -180,7 +180,7 @@
     <string name="desc_player_high_energy">在进度条下方用折线图展示弹幕密度分布</string>
     <string name="desc_player_lock_locked">锁定播放画面（防止误触）</string>
     <string name="desc_player_lock_unlocked">点击解锁播放画面</string>
-    <string name="desc_player_skip_op_ed">播放番剧/影视时，进度走到片头或片尾会自动跳过去，并在屏幕下方留一个「撤回」按钮，点一下就能回到被跳过的地方。\n跳过只对 B 站标注了片头片尾的视频生效。</string>
+    <string name="desc_player_skip_op_ed">播放番剧/影视时，进度走到片头或片尾会自动跳过去，并在屏幕下方留一个「撤回」按钮，点一下就能回到被跳过的地方。\n跳过只对番剧/影视的片头片尾生效（普通投稿的「视频分段」不算）。</string>
     <string name="desc_subtitle_autoshow">开启后，播放存在字幕的视频时，将会自动弹出字幕选择对话框。</string>
     <string name="desc_subtitle_ai_allowed">打开此选项，如果视频只有一个中文AI字幕，播放时仍然会让你选择。\n可能比较烦人，谨慎开启。</string>
     <string name="desc_player_subtitle_size">播放页字幕文字的大小，单位 sp，可填 6~40；超出范围会按边界显示，未设置时用默认值 11</string>
@@ -210,6 +210,9 @@
     <string name="err_sql">数据库读写错误\n请清理空间或清除软件数据</string>
     <string name="err_login_first">\n建议登陆后再尝试</string>
     <string name="err_rejected">：被B站风控系统拦截了\n（无法解决）</string>
+    <string name="err_generic">错误：</string>
+    <string name="err_adapter">遇到Adapter错误：\n无需上报，除非你在某个界面经常遇到</string>
+    <string name="err_adapter_title">Adapter错误</string>
 
     <string name="desc_icon_license">以下是已知的开源图标的开源许可证信息</string>
     <string-array name="icon_license">
@@ -264,6 +267,8 @@
     <string name="pagename_image_viewer">图片查看</string>
     <string name="pagename_login_special">特殊登录</string>
     <string name="pagename_account_switch">账号切换</string>
+    <string name="pagename_subscription">我的订阅</string>
+    <string name="pagename_subscription_season">合集详情</string>
     <string name="pagename_menu">菜单</string>
     <string name="pagename_message">消息</string>
     <string name="pagename_myspace">我的</string>
@@ -375,16 +380,52 @@
 
     #本次版本更新日志（展示在关于页，与历史日志区分）
     <string-array name="update_log_current">
-        <item>【26.11.01 本次更新】</item>
+        <item>【26.11.06 本次更新】</item>
+        <item>注意！！此版本多为实验性更新，可能存在未知bug</item>
+        <item>1、新增「订阅」：在「我的」页进入，收藏夹页和视频合集可订阅</item>
+        <item>2、缓存页多选（批量删除、批量更新弹幕、成批添加到 / 移出文件夹、批量拆散文件夹），与排序</item>
+        <item>3、缓存「合集 / 多P」终于按原来的集数排</item>
+        <item>4、下载屏幕常亮。</item>
+        <item>5、热搜关键词改成跑马灯</item>
+        <item>6、新增「滑动调进度灵敏度」</item>
+        <item>7、播放器菜单新增「跳到指定时间」（实验性，打开时自动填好当前时间）</item>
+        <item>8、可以关掉「显示锁定按钮」</item>
+        <item>9、修了「部分视频一打开就报错」</item>
+        <item>10、修复跳过片头片尾功能</item>
+        <item>11、番剧换源播放（可以播放B站没有/大会员的番剧）</item>
+        <item>12、账号更稳登录更稳定</item>
+        <item>13、用户主页「已关注」长按可以直接加入关注分组、还能顺手新建分组</item>
+        <item>14、设置页搜索框不再一直钉在顶栏下面，跟着内容一起滚动</item>
+        <item>15、评论发图（所有人可用）</item>
+        <item>16、圆屏上长按弹出的二级菜单不再被表盘切掉</item>
+        <item>17、伪装界面也按圆屏收边距了</item>
+        <item>18、播放虚拟合集时，点哪一集就播哪一集</item>
+        <item>19、菜单里的「退出」也能排序和关掉了</item>
+    </string-array>
+
+    #历史更新日志（按日期分组，## 开头为日期标题，之后为当日日志条目）
+    <string-array name="update_history_log">
+        <item>## 2026-11-02</item>
+        <item>1、「虚拟合集」拆成两个独立开关：原「虚拟合集」继续负责把同一文件夹 / 收藏夹的视频组成合集连播（默认开）；新增「收藏夹视频点击即播」（设置 → 高级与实验 → 功能开关，默认关），开启后收藏夹里点卡片直接播放，关闭时点卡片进视频详情页，此时长按卡片可以「以虚拟合集连播」。</item>
+        <item>2、长按加速的倍率可以自己选了：设置 → 播放与播放器 → 内置播放器设置 新增「长按倍速档位」（1.5x / 2x / 3x / 5x，默认 3x）。</item>
+        <item>3、多P 视频会记住上次看到第几P，点播放直接接着播，选集页也会自动定位到那一P。</item>
+        <item>4、看图更顺手：图片页双击放大（1x → 2x → 6.25x 循环）；评论区图片下载改成点一下就存、连点不会重复下载，成功失败都有明确提示。</item>
+        <item>5、缓存放外置 SD 卡时，用外部播放器打开不再闪退；实在交不出去会自动改用内置播放器并提示。</item>
+        <item>6、修了老是掉登录的问题：应用运行期间会定期续期登录凭证，失败时按冷却时间自动退避，不会一直硬撞。</item>
+        <item>7、修了短视频被强行拉伸铺满整屏、以及播放中莫名熄屏的问题。</item>
+        <item>8、播放器一批修正：长按加速时横滑不再误调进度；静音拖进度不再突然出声；载入中切后台回来画面比例正常；换 P 不再误跳片头片尾；缓存切 P 保留外挂音轨；关掉弹幕后不再自己冒出来。</item>
+        <item>9、界面修正：圆屏下首页 / 推荐等页的时钟居中、不再被圆盘切掉；长图评论不再被整条缩小；大字体下按钮不折行、同一行能对齐；「我的反馈」列表为空时点顶栏能正常返回；输入框选中文字看得清。</item>
+        <item>10、修了菜单设置「改了保存不住、恢复默认」的问题——装过 Beta / 内部包的人换回正式版，排序和显隐也不会被重置。</item>
+        <item>11、修了一批闪退：收藏夹列表来回进出编辑页、图片页双指操作、消息页空列表、退出播放器、弹幕内容异常。</item>
+        <item>12、一批提示更准确：取流失败不再弹「No value for durl」这类英文原文，改成说清原因；删缓存失败不再谎报成功；只有列表真异常才提示 Adapter 错误。</item>
+        <item></item>
+        <item>## 2026-11-01</item>
         <item>1、播放器相关代码整体退回 26.10.27 的稳定实现，修上一版在手机上「安装包明显变大、视频完全播不出来」的问题；画面与声音恢复单路流播放，音画不再错位。</item>
         <item>2、新增「退出」按钮（菜单底部），点一下彻底关闭应用，不用再去系统里强停。</item>
         <item>3、新增实验功能「圆屏列表」：圆屏模式下滚动列表时条目带曲率缩放与边缘淡出（设置 → 高级与实验，默认关闭，需与「圆屏适配」同时开启）。</item>
         <item>4、修了播放时系统媒体控件把本应用认成「下载」的问题，现在正确显示为音乐播放，并带上封面与进度。</item>
         <item>5、列表封面加载更省资源（复用图片请求参数），快速滚动更顺。</item>
-    </string-array>
-
-    #历史更新日志（按日期分组，## 开头为日期标题，之后为当日日志条目）
-    <string-array name="update_history_log">
+        <item></item>
         <item>## 2026-10-31</item>
         <item>1、播放器清晰度按账号权限锁定，新增 4K 档位（不稳定，实验性）；播放页内也能切 1080P。</item>
         <item>2、收藏夹管理页新增「内容管理」入口，可以清空失效内容。</item>
@@ -778,6 +819,7 @@
     <string name="desc_menu_disabled">未启用</string>
     <string name="desc_menu_fixed">固定</string>
     <string name="desc_menu_fixed_hint">此项不可隐藏</string>
+    <string name="msg_menu_exit_not_start">「退出」不能设为启动页</string>
     <string name="desc_menu_help_title">使用说明（点按展开）</string>
     <string name="desc_menu_help_body">启动页：勾选的那一项就是打开应用后直接进入的页面，点按已启用项即可改选（默认「推荐」）\n点按本说明可展开或收起；2 秒内连续长按两次可把它隐藏\n长按并拖动可调整菜单顺序\n拖入未启用区域可将其移入未启用列表，点按未启用项放回末尾\n推荐、设置、缓存、搜索固定不可隐藏</string>
     <string name="msg_menu_help_hide_hint">再长按一次即可隐藏说明</string>
@@ -834,6 +876,26 @@
     <string name="text_list_empty_retry">啥都木有~\n点我重试</string>
     <string name="text_list_loading">正在加载…</string>
     <string name="text_list_no_more">没有更多了</string>
+    <!-- ===== 我的订阅（收藏夹/合集订阅） ===== -->
+    <string name="text_subscription_placeholder_title">订阅标题</string>
+    <string name="text_subscription_type_folder">收藏夹</string>
+    <string name="text_subscription_type_season">合集</string>
+    <string name="text_subscription_meta">%1$s · %2$d 个视频</string>
+    <string name="msg_subscription_need_login">还没有登录喵~</string>
+    <string name="msg_subscription_csrf_invalid">登录凭证已失效，请重新登录</string>
+    <string name="msg_subscription_bad_request">请求出错了，请稍后再试</string>
+    <string name="msg_subscription_content_gone">内容不存在，可能已经被删除了</string>
+    <string name="msg_subscription_failed_with_code">操作失败（错误码 %1$d）</string>
+    <string name="msg_subscription_invalid">该收藏夹已失效</string>
+    <string name="msg_subscription_cancel_confirm">确定取消订阅「%1$s」吗？</string>
+    <string name="msg_subscription_cancelled">已取消订阅</string>
+    <string name="text_sub_toggle_loading">订阅状态加载中…</string>
+    <string name="text_sub_toggle_subscribe">订阅</string>
+    <string name="text_sub_toggle_subscribed">已订阅</string>
+    <string name="msg_sub_subscribed">已订阅</string>
+    <string name="msg_sub_unsubscribed">已取消订阅</string>
+    <string name="msg_sub_confirm_unsub_folder">确定取消订阅该收藏夹吗？</string>
+    <string name="msg_sub_confirm_unsub_season">确定取消订阅该合集吗？</string>
     <!-- ===== 下载过程（12.4 文案迁移：三批） ===== -->
     <string name="text_download_preparing">准备中</string>
     <string name="text_download_start">开始下载</string>
@@ -874,6 +936,10 @@
     <string name="msg_storage_fallback">原缓存目录不可写，已自动改存到应用专属目录：%1$s</string>
     <string name="msg_picture_fallback">原图片目录不可写，已自动改存到应用专属目录：%1$s</string>
     <string name="msg_storage_unavailable">存储空间当前不可写（可能已满或被设为只读），请清理后重试</string>
+    <!-- 图片下载失败（反馈 #17）：图片链路用 Toast 提示——页面此时已经结束，页面内 Snackbar 会跟着窗口一起消失 -->
+    <string name="msg_picture_download_failed">图片下载失败，请检查网络或存储空间后重试</string>
+    <!-- 缓存视频删除失败（反馈 #58）：删除结果必须如实反馈，不能再一律提示「删除成功」 -->
+    <string name="msg_cache_delete_failed">删除失败：%1$s\n文件可能被占用，或当前没有该目录的写入权限，请用文件管理器删除</string>
     <string name="text_danmaku_download_failed">弹幕下载失败！</string>
     <string name="text_load_failed">加载失败</string>
     <!-- ===== 敏感操作前的 Cookie 检查提示（12.4 文案迁移：五批） ===== -->
@@ -928,12 +994,18 @@
     <string name="msg_specialloginactivity_003">请检查输入的内容，不要有多余空格或字符</string>
     <string name="msg_specialloginactivity_004">已复制</string>
     <string name="msg_specialloginactivity_005">登录成功！</string>
+    <string name="msg_specialloginactivity_006">登录信息写入失败：账号 ID 与 Cookie 里的用户 ID 不一致，请重新导出后再试</string>
+    <string name="msg_specialloginactivity_007">没有可导入的账号，请检查登录信息是否完整</string>
+    <string name="msg_specialloginactivity_008">已导入 %1$d 个账号（新增 %2$d，更新 %3$d），到「账号切换」里选择要用的账号</string>
+    <string name="msg_specialloginactivity_009">还没有可导出的账号，请先登录</string>
     <string name="pagename_qrloginhelpactivity_001">登录方式说明</string>
     <string name="pagename_captchawebviewactivity_001">人机验证</string>
     <string name="msg_long_captchawebviewactivity_001">此设备无法显示人机验证（WebView 不可用），请改用扫码登录或 Cookie 登录</string>
     <string name="msg_captchawebviewactivity_001">验证参数错误</string>
     <string name="msg_accountswitchactivity_001">这是当前登录的账号</string>
     <string name="msg_accountswitchactivity_002">已删除账号</string>
+    <string name="msg_accountswitchactivity_003">当前登录的账号不能删除，请先切换到其他账号</string>
+    <string name="msg_accountswitchactivity_004">这个账号保存的登录信息不完整（或与用户 ID 对不上），切换已取消，请重新登录该账号</string>
     <string name="msg_login_status_passwordloginfragment_001">此设备无法显示人机验证，请改用扫码登录</string>
     <string name="msg_login_status_passwordloginfragment_002">验证已取消</string>
     <string name="msg_login_status_passwordloginfragment_003">请输入账号和密码</string>
@@ -946,6 +1018,7 @@
     <string name="msg_login_status_passwordloginfragment_010">提交超时，请重试</string>
     <string name="msg_login_status_passwordloginfragment_011">验证码错误，请重试</string>
     <string name="msg_login_status_passwordloginfragment_012">需要手机号验证，请使用短信验证码登录</string>
+    <string name="msg_login_status_passwordloginfragment_013">登录信息不完整（缺少用户 ID），请重试</string>
     <string name="msg_login_status_smsloginfragment_001">请输入正确的手机号</string>
     <string name="msg_login_status_smsloginfragment_002">请输入手机号和验证码</string>
     <string name="msg_login_status_smsloginfragment_003">请先完成人机验证</string>
@@ -1348,6 +1421,7 @@
     <string name="text_tutorial_history_done">历史记录：已完成过（版本 %1$d）</string>
     <string name="text_account_empty">暂无已保存的账号\n登录后会自动保存账号凭证</string>
     <string name="text_account_add_new">添加新账号</string>
+    <string name="text_account_import">导入账号数据（支持一次性导入多个账号）</string>
     <string name="text_update_current_version">本次更新 (%1$s)</string>
 
     <string name="uitext_messageactivity_001">@我</string>
@@ -1484,6 +1558,7 @@
     <string name="uitext_playeractivity_028">网络似乎已断开，可稍后手动重试</string>
     <string name="uitext_playeractivity_029">正在缓冲</string>
     <string name="uitext_playeractivity_030">载入视频中</string>
+<string name="uitext_playeractivity_third_party_resolving">正在解析片源…</string>
     <string name="uitext_playeractivity_031">载入直播中</string>
     <string name="uitext_playeractivity_032">初始化播放</string>
     <string name="uitext_playeractivity_033">不支持默认横屏！</string>
@@ -1491,7 +1566,6 @@
     <string name="uitext_replyinfoactivity_001">评论详情</string>
     <string name="uitext_writereplyactivity_001">图片处理失败</string>
     <string name="uitext_writereplyactivity_002">图片上传失败</string>
-    <string name="uitext_writereplyactivity_003">带图评论仅大会员可用喵~</string>
     <string name="uitext_writereplyactivity_004">最多只能添加9张图片喵~</string>
     <string name="uitext_writereplyactivity_005">发送成功&gt;w&lt;</string>
     <string name="uitext_searchactivity_001">还没输入内容喵~</string>
@@ -1836,6 +1910,32 @@
     <string name="uitext_locallistactivity_020">重命名文件夹</string>
     <string name="uitext_locallistactivity_021">拆散文件夹</string>
     <string name="uitext_locallistactivity_022">删除视频</string>
+    <string name="uitext_locallistactivity_023">操作</string>
+    <string name="uitext_locallistactivity_024">已选 %1$d 项</string>
+    <string name="uitext_locallistactivity_025">退出</string>
+    <string name="uitext_locallistactivity_026">点条目勾选，再点「操作」</string>
+    <string name="uitext_locallistactivity_027">文件夹和视频不能一起操作，先取消一种</string>
+    <string name="uitext_locallistactivity_028">确定删除选中的 %1$d 个视频吗？此操作不可恢复。</string>
+    <string name="uitext_locallistactivity_029">确定拆散选中的 %1$d 个文件夹吗？视频会移回未分类区域。</string>
+    <string name="uitext_locallistactivity_030">已删除 %1$d 条，%2$d 条失败</string>
+    <string name="uitext_locallistactivity_031">弹幕更新完成：成功 %1$d 个，失败 %2$d 个</string>
+    <!-- 虚拟合集（26.11.02）：下面四条与上面的多选批量操作是两批文案，
+         合并时两边都从 023 起编号撞了号（资源重名会直接构建失败），故这四条从 032 起 -->
+    <string name="uitext_locallistactivity_032">已进入虚拟合集：%1$s（共%2$d个视频）</string>
+    <string name="uitext_locallistactivity_033">该文件夹内没有可播放的视频</string>
+    <string name="uitext_locallistactivity_034">无法定位起始视频，请重新选择</string>
+    <string name="uitext_locallistactivity_035">%1$s（虚拟合集）</string>
+
+    <!-- 缓存页手动拖动排序 / 搜索（26.11.02，反馈 #94；26.11.05 起排序改为拖动） -->
+    <string name="btn_cache_sort">排序</string>
+    <string name="btn_cache_sort_done">完成</string>
+    <string name="text_cache_sort_hint">长按条目拖动排序</string>
+    <string name="msg_cache_sort_show_all">已显示全部缓存</string>
+    <string name="btn_cache_search">搜索</string>
+    <string name="btn_cache_search_clear">清除</string>
+    <string name="text_cache_search_title">搜索缓存</string>
+    <string name="text_cache_search_hint">输入关键词，留空清除</string>
+    <string name="text_cache_search_empty">没有匹配的缓存</string>
     <string name="uitext_seriesinfoactivity_001">系列详情</string>
     <string name="uitext_multipageactivity_001">已在下载队列</string>
     <string name="uitext_qualitychooseractivity_004">4K 超清</string>
@@ -1902,7 +2002,7 @@
     <string name="uitext_danmakumanager_001">弹幕准备完毕</string>
     <string name="uitext_playercontroldelegate_001">自动</string>
     <string name="uitext_skipopedprefs_001">已自动跳过片头/片尾，可在下方撤回</string>
-    <string name="uitext_skipopedprefs_002">这个视频有片头片尾，可以自动跳过</string>
+    <string name="uitext_skipopedprefs_002">这个番剧有片头片尾，可以自动跳过</string>
     <string name="uitext_skipopedprefs_003">开启</string>
     <string name="uitext_playbackservice_002">后台播放</string>
     <string name="uitext_playbackservice_003">后台/熄屏播放时的常驻遥控通知</string>
@@ -2353,6 +2453,10 @@
          的设备侧问题，客户端只能提示并退出播放页，没有系统播放器可回落。 -->
     <string name="msg_ijk_native_load_failed">播放器组件加载失败，无法播放视频，请重装应用后再试</string>
 
+    <!-- 26.11.04：播放页「先跳转、再解析备用片源」时，私有侧不在场（公开构建）或被拒绝接手的兜底提示。
+         有私有片源功能时，失败提示由私有侧给（private/res/values/strings_feature_source.xml）。 -->
+    <string name="msg_third_party_no_source">没找到可播放的片源</string>
+
     <!-- 26.10.19 审查修复批次：文案迁移新增键（util-model / player-native / ui-feed） -->
     <string name="uitext_msgnotifier_009">%1$d 条新私信</string>
     <string name="uitext_msgnotifier_010">%1$d 条新消息</string>
@@ -2370,6 +2474,7 @@
     <string name="msg_player_entered_collection">进入合集：%1$s</string>
     <string name="msg_player_entered_multi_page">进入分P：%1$s</string>
     <string name="msg_player_lock_hint">已锁定：点画面显示锁定按钮，再点按钮解锁</string>
+    <string name="msg_player_local_share_fallback">该缓存文件无法交给外部播放器，已改用内置播放器</string>
     <string name="uitext_dynamicholder_019">已经删除过了哦~</string>
     <string name="uitext_dynamicholder_020">不是自己的动态！</string>
     <string name="uitext_dynamicholder_021">%1$s人参与</string>
@@ -2405,6 +2510,7 @@
     <string name="uitext_favoritevideolistactivity_022">取消失败，错误码：%1$s</string>
     <string name="uitext_favoritevideolistactivity_023">%1$s（虚拟合集）</string>
     <string name="uitext_favoritevideolistactivity_024">以虚拟合集连播</string>
+    <string name="uitext_favoritevideolistactivity_025">无法定位起始视频，请重新选择</string>
     <string name="uitext_userinfoactivity_002">用户信息-%1$s</string>
     <string name="uitext_bangumiinfofragment_020">已完结</string>
     <string name="uitext_bangumiinfofragment_021">连载中</string>
@@ -2507,4 +2613,126 @@
     <string name="text_image_picker_load_failed">读取相册失败，可以点上方「系统选择器」选图</string>
     <!-- 缩略图的读屏文字 -->
     <string name="text_image_picker_item">图片</string>
+
+    <!-- ==================== 播放器：#61 长按倍速档位 / #83 分P 续播 ==================== -->
+    <!-- 设置项名：与既有的「长按倍速」开关区分开，那一项管开关、这一项管倍率 -->
+    <string name="setting_player_longpress_speed_name">长按倍速档位</string>
+    <string name="setting_player_longpress_speed_desc">长按画面加速时使用的倍率（弹幕一起加速），默认 3.0x</string>
+    <!-- %1$d 是分P 序号（从 1 开始） -->
+    <string name="msg_player_resume_page">继续播放第 %1$d P</string>
+
+    <!-- ==================== 播放器：反馈 #94a 滑动灵敏度 / QQ#7 锁定按钮开关 / QQ#9 精确跳转 ==================== -->
+    <!-- 设置项名：横滑调进度的倍率档位（存档键/档位表在 PlayerSwipeSeekScalePolicy） -->
+    <string name="setting_player_swipe_seek_scale_name">滑动调进度灵敏度</string>
+    <string name="setting_player_swipe_seek_scale_desc">左右滑动时划过整个屏幕对应的进度倍率；手表 dpi 低、手指一动就跳很多时调小，默认 1.0x</string>
+    <!-- 设置项名：锁定按钮显隐；关掉后不显示按钮，也不会误触进入锁定 -->
+    <string name="setting_player_lock_button_name">显示锁定按钮</string>
+    <string name="setting_player_lock_button_desc">关闭后播放页不显示锁定按钮，拖动进度条时不会误触锁定</string>
+    <!-- 播放器菜单项：打开输入框，输入时间点直接跳转（直播不显示） -->
+    <string name="text_player_jump_to_time">跳到指定时间</string>
+    <string name="hint_player_jump_to_time">秒数 / mm:ss / hh:mm:ss</string>
+    <string name="msg_player_jump_invalid">时间格式不对，可输入 90、1:30 或 1:02:03</string>
+    <string name="msg_player_jump_out_of_range">已跳到视频末尾</string>
+
+    <!-- ==================== 用户详情页：长按「已关注」加入分组（反馈 #88） ==================== -->
+    <!-- 弹窗标题 -->
+    <string name="uitext_userdynamicadapter_022">加入分组</string>
+    <!-- 菜单项后缀：%1$s 是分组名 -->
+    <string name="uitext_userdynamicadapter_023">%1$s（已加入）</string>
+    <!-- 点到已经加入的分组时的提示；%1$s 是分组名 -->
+    <string name="uitext_userdynamicadapter_024">已经在「%1$s」分组里了</string>
+    <!-- 成功加入后的提示；%1$s 是分组名 -->
+    <string name="uitext_userdynamicadapter_025">已加入「%1$s」</string>
+    <!-- 网络异常 / 接口异常时的动作名（MsgUtil.err 的标题） -->
+    <string name="uitext_userdynamicadapter_026">加入分组失败</string>
+    <!-- 新建分组弹窗的确认按钮 -->
+    <string name="uitext_userdynamicadapter_027">创建</string>
+    <!-- 新建成功但回查不到新分组（极少见）时的提示 -->
+    <string name="uitext_userdynamicadapter_028">分组已创建，但没找到它，请稍后刷新再试</string>
+
+    <!-- ==================== 评论发送成功但查不到（反馈 #85） ==================== -->
+    <!-- 服务端回了 code=0，但评论区（按时间排序、seek 到新评论）查不到这条评论：
+         多半是进了审核。不能报「发送成功」，否则用户刷新后评论消失，看起来像发不出去。 -->
+    <string name="uitext_writereplyactivity_022">评论已提交，但评论区暂时查不到（可能正在审核）。稍后刷新看看，先别重复发送</string>
+
+    <!-- ==================== 内置播放器设置：分组标题 ==================== -->
+    <!-- 「完整设置」页与假播放器的按钮设置卡片共用这七个组名（见 player/PlayerSettingsGroups.kt）。 -->
+    <string name="setting_player_group_gesture">手势与滑动</string>
+    <string name="setting_player_group_defaults">播放默认值</string>
+    <string name="setting_player_group_display">画面与显示</string>
+    <string name="setting_player_group_decode">渲染与解码</string>
+    <string name="setting_player_group_danmaku">弹幕</string>
+    <string name="setting_player_group_subtitle">字幕</string>
+    <string name="setting_player_group_toolbar">界面按钮</string>
+    <!-- 可自定义按钮的短名（假播放器设置页的候选列表与槽位用） -->
+    <string name="setting_player_btn_lock">锁定</string>
+    <string name="setting_player_btn_speed">倍速</string>
+    <string name="setting_player_btn_danmaku">弹幕</string>
+    <string name="setting_player_btn_rotate">旋转</string>
+    <string name="setting_player_btn_danmaku_send">发弹幕</string>
+    <string name="setting_player_btn_subtitle">字幕</string>
+    <string name="setting_player_btn_loop">循环播放</string>
+    <string name="setting_player_btn_audio_only">听视频</string>
+    <string name="setting_player_btn_auto_next">自动连播</string>
+    <string name="setting_player_btn_viewpoint">看点</string>
+    <string name="setting_player_btn_video_info">视频信息</string>
+    <string name="setting_player_btn_jump_time">跳转时间</string>
+    <string name="setting_player_btn_queue_mode">连播队列</string>
+    <string name="setting_player_btn_quality">清晰度</string>
+    <string name="setting_player_btn_sound_cut">音量减</string>
+    <string name="setting_player_btn_sound_add">音量加</string>
+    <string name="setting_player_btn_page_selector">分P</string>
+    <!-- 没有可调设置的按钮，卡片里显示这一行说明 -->
+    <string name="setting_player_btn_nosettings">这个按钮没有可单独调整的设置，播放时点了才有反应。</string>
+    <!-- 播放页「组」槽位那个按钮的无障碍说明：点一下把组里的按钮横向展开 -->
+    <string name="desc_player_group_expand">展开这组按钮</string>
+
+    <!-- 设置 → 播放与播放器 → 播放器界面（26.11.06） -->
+    <string name="pagename_setting_player_ui">播放器界面</string>
+    <string name="setting_player_ui_entry_desc">调整播放器上的按钮与布局</string>
+    <string name="setting_player_ui_full">完整设置</string>
+    <string name="setting_player_ui_choose_player">选择播放器</string>
+    <string name="setting_player_ui_reset">恢复默认布局</string>
+    <!-- 卡片标题：点了播放器上哪块地方 -->
+    <string name="setting_player_ui_label_progress">进度条</string>
+    <string name="setting_player_ui_label_online">在线人数</string>
+    <string name="setting_player_ui_label_blank">播放手势</string>
+    <string name="setting_player_ui_label_play">播放与暂停</string>
+    <!-- 标题栏那三个新开关 -->
+    <string name="setting_player_ui_show_title">显示标题</string>
+    <string name="setting_player_ui_show_battery">显示电量</string>
+    <string name="setting_player_ui_show_clock">显示时钟</string>
+    <!-- 布局编辑 -->
+    <string name="setting_player_ui_add_slot">＋</string>
+    <string name="setting_player_ui_pick_button">选一个按钮</string>
+    <string name="setting_player_ui_pick_button_replace">换成哪个按钮</string>
+    <string name="setting_player_ui_replace">换成别的按钮</string>
+    <string name="setting_player_ui_make_group">这格改成一组按钮</string>
+    <string name="setting_player_ui_remove">移除这一格</string>
+    <string name="setting_player_ui_move_up">往前挪一格</string>
+    <string name="setting_player_ui_move_down">往后挪一格</string>
+    <string name="setting_player_ui_group_title">一组按钮</string>
+    <string name="setting_player_ui_group_members">组里的按钮，点一条进它的设置</string>
+    <string name="setting_player_ui_group_member_settings">设置：%1$s</string>
+    <string name="setting_player_ui_group_drop_member">移除组里的按钮</string>
+    <string name="setting_player_ui_group_add_member">往这组里加按钮</string>
+    <string name="setting_player_ui_group_remove_member">移除 %1$s</string>
+    <string name="setting_player_ui_region_full">这一列已经放不下了</string>
+    <!-- 播放器界面：按列管理按钮（一列一节，一格一行） -->
+    <string name="setting_player_ui_region_left">左列</string>
+    <string name="setting_player_ui_region_right">右列</string>
+    <string name="setting_player_ui_region_bottom_left">底部左侧</string>
+    <string name="setting_player_ui_region_bottom_right">底部右侧</string>
+    <string name="setting_player_ui_region_desc">%1$s · 第 %2$d 格</string>
+    <string name="setting_player_ui_region_capacity">最多放 %1$d 格</string>
+    <string name="setting_player_ui_region_empty">这一列还空着，点下面加一个</string>
+    <string name="setting_player_ui_group_count">一组按钮（%1$d 个）</string>
+    <string name="setting_player_ui_group_members_desc">%1$s</string>
+    <string name="setting_player_ui_add_button">＋ 加一个按钮</string>
+    <string name="setting_player_ui_add_group_member">＋ 往这组里加按钮</string>
+    <string name="setting_player_ui_slot_hint">点一格可以换按钮、挪位置或移除</string>
+    <string name="setting_player_ui_may_hide">注意：有些视频里不显示</string>
+    <string name="setting_player_ui_region_title">%1$s（%2$d 格）</string>
+    <string name="setting_player_ui_label_elements">画面元素</string>
+    <string name="setting_player_ui_element_desc">点一下调整与它相关的设置</string>
 </resources>

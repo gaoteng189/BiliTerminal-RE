@@ -6,13 +6,16 @@
 
 ## 1. 当前版本状态
 
-- **版本号**：`26.11.01`（`versionCode 2611010`，tag `26.11.01`）——CI 的 `verify-version` 会拿 tag 的 `YY.MM.DD` 段去比 `versionName`；`strings.xml` 的 `update_log_current` 锚点是「【26.11.01 本次更新】」，`:app:verifyVersionConsistency` 以该锚点校验。tag `26.10.31`、`26.10.31.1`、`26.11.01` 均已占用（发版记录见 §4 的 §六十一~§六十四）。
-- **上一版**：`26.10.31.1` / tag `26.10.31.1`（`versionCode 2610311`、`versionName 26.10.31`）。
-- **本轮改动（26.11.01，紧急回退版）**：按用户要求把**播放器相关代码整体退回 26.10.27 发版状态**（§3.90）——撤掉自编译的 ijkplayer 补丁库（`.so` 回到上游预编译版，三 ABI 体积回落）、ExoPlayer 统一时钟内核与 DASH 双流方案，修上一版在真机上「安装包明显变大、视频完全播不出来」；同时合并 PR #18（§3.91 菜单退出按钮、§3.92 媒体控件归类、§3.93 圆屏列表实验效果、§3.94 封面请求复用）与 PR #19（§3.83 举报 / 弹幕消息迁入可选私有功能，公开侧只留门面与挂点）。明细见 `strings.xml` 的 `update_log_current`（5 条编号条目，另 1 条为版本锚点）。
+- **版本号**：`26.11.06`（`versionCode 2611060`，tag `26.11.06`）——CI 的 `verify-version` 会拿 tag 的 `YY.MM.DD` 段去比 `versionName`；`strings.xml` 的 `update_log_current` 锚点是「【26.11.06 本次更新】」，`:app:verifyVersionConsistency` 以该锚点校验。tag `26.10.31`、`26.10.31.1`、`26.11.01`、`26.11.02`、`26.11.06` 均已占用（发版记录见 §4）。
+- **26.11.06 本轮改动**：覆盖 26.11.02 之后的 28 个提交（§3.108~§3.118），分别是「我的订阅」（含订阅 / 取消订阅入口）、缓存页多选批量操作与拖动排序搜索、缓存合集按下载页序排列、下载期间不休眠 + 下载页常亮、热搜跑马灯、播放器滑动调进度灵敏度 / 跳到指定时间 / 锁定按钮开关、mcdn 直链 -10000 修复、自动跳过片头片尾只对 PGC 生效、番剧「播放来源」面板与换源播放接入弹弹play 弹幕（可选私有功能）、账号代际隔离与多账号导入导出、#88 关注分组长按、#85 评论「假发送成功」、#97 设置页搜索框随内容滚动、带图评论图床目录与大会员前置拦截。文档侧另补：App 开源信息页与 `readme.md` 致谢加入 Kazumi（选源交互 / 第三方弹幕接入思路，GPL v3，未包含其源码）。
+- **上一版**：`26.11.02` / tag `26.11.02`（`versionCode 2611020`、`versionName 26.11.02`）；其 12 条日志已归档进 `update_history_log` 的「## 2026-11-02」组（本版首次把它补进历史页——26.11.02 发版时该组未写入）。
+- **上一版（26.11.01）**：按用户要求把**播放器相关代码整体退回 26.10.27 发版状态**（§3.90）——撤掉自编译的 ijkplayer 补丁库（`.so` 回到上游预编译版，三 ABI 体积回落）、ExoPlayer 统一时钟内核与 DASH 双流方案，修上一版在真机上「安装包明显变大、视频完全播不出来」；同时合并 PR #18（§3.91 菜单退出按钮、§3.92 媒体控件归类、§3.93 圆屏列表实验效果、§3.94 封面请求复用）与 PR #19（§3.83 举报 / 弹幕消息迁入可选私有功能，公开侧只留门面与挂点）。明细见 `strings.xml` 的 `update_log_current`（5 条编号条目，另 1 条为版本锚点）。
 - **上一轮改动（26.10.31.1）**：修复「倍速播放时听到两路重叠音频、其中一路跟不上」（§3.88 终版——给随包 ijkplayer 打内核补丁；该补丁随 26.11.01 的回退一并撤掉）、修掉扫码登录停轮询后的失败提示外露英文异常原文（§3.86）。
 - **上一轮改动（26.10.31）**：清晰度按账号权限锁定 + 4K 接入（§4 六十）、播放页内切 1080P（§4 五十九）、私信 2 分钟内撤回、内置选图页、图片加载提速、弥散光晕可选光源位置（§3.76）、系统时间错误防呆（§3.72）、账密 / 短信登录补存 App access_token（§3.87），以及四类修复（工具页跳转杀下层、短视频弹幕不跟设置、空关键词搜索藏历史、倍速两路重叠音频）。另有**一轮私有化整理**：评论举报与弹幕类消息整体迁入可选私有功能，公开仓库只留门面与挂点（§3.83）。明细见 `strings.xml` 的 `update_log_current`（10 条编号条目，另 1 条为版本锚点）。
 - **26.10.31 发版时工作区已清空**：26.10.27 之后累积的未发版改动（§3.72~§3.85）与发版前补的登录令牌改动（§3.87）都随本版一起出去了。
 - **26.11.01 发版时工作区已清空**：§3.91~§3.94（PR #18）与 §3.83 的私有化整理（PR #19）都随本版一起发布；26.11.01 之后新的待发版改动从这里往下记。
+- **PR #20 已合入（26.11.06 发版前）**：①长按二级菜单弹窗与两个伪装页补圆屏适配（§3.113）；②「虚拟合集」起播索引修复（§3.114）；③菜单「退出」改为可排序、可关闭（§3.115）；④搜索设置「视频搜索（始终启用）」显示修正（§3.117）；⑤关于页开发者列表新增 Kuinone（§3.118）。来源 PR #20（作者 Kuinone）；合入时剔除了误提交的 16 个 build-*.log 与 .github/workflows/auto_pr_kuinone.yml。
+- **26.11.05 已随 26.11.06 发版**：合并远程 `main` 后没解干净的冲突（资源重名 + `BaseActivity` 残留旧边距算术，§3.116）、搜索设置「视频搜索（始终启用）」显示成锁定关（§3.117）、关于页开发者列表新增 Kuinone（§3.118）。版本号未动（仍是 `26.11.01` / `2611010`）。
 - **下次递增**：先看 `app/build.gradle:23-24`；release immutability 下被 Release 用过的 tag **永久不可复用**，同版本名补丁版只能用 `26.10.24.1` 这种后缀形式，`versionCode` 递增、`versionName` 可不变。改了版本号还要同步 `strings.xml` 里 `update_log_current` 的「【YY.MM.DD 本次更新】」锚点，否则 `:app:verifyVersionConsistency` 会失败。
 - **构建命令**（单测任务名**带 flavor 前缀**，`testDebugUnitTest` 自 26.10.11 引入 flavor 后已不存在）：
 
@@ -28,7 +31,7 @@
 - **依赖仓库**：`settings.gradle` 已把 aliyun 的 `google` / `public` / `gradle-plugin` 三个镜像前置，`google()`/`mavenCentral()`/jitpack 仅作兜底。
 - **改了 `res/` 文件集合时**：`:app:clean` 与后续命令**必须分两次 Gradle 调用**，且带 `--no-build-cache --no-configuration-cache`，否则会回放陈旧资源（症状是 `Unresolved reference 'R.layout.xxx'`）。
 - **版本一致性**：`:app:verifyVersionConsistency` 以 `strings.xml` 的 `update_log_current` 为锚点校验版本一致性；发版说明也由 CI 从它抽取（抽不到直接拒绝发版）。
-- **单测（26.11.01 同步上游 24 个提交后复测，`testStandardDebugUnitTest` 与 `testCoexistDebugUnitTest` 各跑一遍）**：**公开配置 106 suites / 1096 tests**、**注入 `private/` 后 109 suites / 1142 tests**，两个 flavor 完全相同（同源码），0 失败 0 错误 0 跳过。两套数字都要记：公开配置少掉的正是随私有源码一起注入的那 3 个用例类，配置错了会立刻从计数上看出来（公开配置那次带 `--no-configuration-cache`，避免 `hasPrivateFeature` 回放旧值）。计数方式：`app/src/test/` 下 `*Test.kt|java` 计源文件（另有共享假实现 `util/FakeSharedPreferences.kt`），`app/build/test-results/<flavor>DebugUnitTest/TEST-*.xml` 的 `tests=` 求和（**用 PowerShell 解析会因中文用例名抛 `InvalidCastToXmlDocument`，改用 Python `xml.etree`**）。用例数一律以机器产出为准，队友口述数字不进入文档。
+- **单测（26.11.06 同步上游 109 个提交后复测，`testStandardDebugUnitTest` 与 `testCoexistDebugUnitTest` 各跑一遍）**：**公开配置 171 suites / 1858 tests**、**注入 `private/` 后 174 suites / 1904 tests**（差 3 个类 / 46 例 = 私有侧 `ReportApiTest` 34 + `DanmuMessageTest` 8 + `FeatureHolderSignatureTest` 4），两个 flavor 完全相同（同源码），0 失败 0 错误 0 跳过。**两套数字都要记**：公开配置少掉的正是随私有源码一起注入的那几个用例类，配置错了会立刻从计数上看出来（公开配置那次带 `--no-configuration-cache`，避免 `hasPrivateFeature` 回放旧值）。计数方式：`app/src/test/` 下 `*Test.kt|java` 计源文件（另有共享假实现 `util/FakeSharedPreferences.kt`），`app/build/test-results/<flavor>DebugUnitTest/TEST-*.xml` 的 `tests=` 求和（**用 PowerShell 解析会因中文用例名抛 `InvalidCastToXmlDocument`，改用 Python `xml.etree`**）。用例数一律以机器产出为准，队友口述数字不进入文档。
 - **26.10.10 那一轮的构建记录（历史，留作「改 minSdk / 重跑 release 链路」时的验证口径）**：`minSdk 24 → 19` 全部改动（含 jsoup 1.16.1、7 个 `res/drawable-v21` 资源）落盘后，按「`clean` → `assembleRelease` → `lintRelease` → 单测」四步跑完（均带 `--no-configuration-cache`，`clean` 与 `assemble` 分两次调用），四步全 `BUILD SUCCESSFUL`（37s / 2m13s / 1m25s / 39s）。当时单测汇总 **49 suites / 460 tests / 0 failures**（任务名当时还是 `testDebugUnitTest`，现已带 flavor 前缀），最新 XML 时间 `2026-10-09T22:59:04`（晚于当轮 APK 出包时间 22:56:58，覆盖了当轮全部源码改动）。`:app:lintRelease` 的 **`NewApi` 从 22 条降到 2 条**，且这 2 条就是 `PlayerActivity.kt:1981` 的已知假阳性。发版前仍建议再跑一次确认。
 - **「自动跳过片头片尾」已恢复上线（26.10.22）**：26.10.10 的紧急撤回**已解除**，`SkipOpEdPrefs.FEATURE_ENABLED` 回到 `true`，设置入口与搜索索引均已恢复；口径按用户拍板改为**默认关闭**（`DEFAULT_ENABLED = false`，老用户存档里显式写的值仍然优先）。恢复细节见 §3.3「恢复记录」，乱跳的三个根因修复见 §3.55。
 - **本轮基建改动（26.10.10）**：**`minSdk 24 → 21 → 19（Android 4.4）`**，唯一落点是 `app/build.gradle:21`。两级下调的成本不同，分开记：
@@ -130,6 +133,8 @@
 
 - [ ] **短视频页圆屏适配（§3.65）真机未验证**：只在 MuMu 模拟器（`wm size 320x320` + `wm density 160`）上验过。真机用例：圆屏手表开启「圆屏适配」→ 进短视频页，顶栏标题/返回箭头不贴边、底栏进度条与按钮不被裁角、竖屏视频按内接圆缩小居中且不变形；关闭开关后恢复原样；圆屏开时上下切视频、左右滑详情页、弹幕显示均正常。
 
+- [ ] **短视频画面尺寸 state 驱动（§3.98）的边界形态待真机**：`videoWidth==0` 的真实流（容器无分辨率 / probe 窗过短）与旋转 90/270 的真实视频（`MEDIA_INFO_VIDEO_ROTATION_CHANGED`）模拟器上都构造不出来（B 站 9:16 合一 MP4 尺寸非 0、rotation 全 0），这两条靠 `ShortVideoLayoutMathTest` + 代码走查兜底。真机用例：①刷到「容器元数据不带分辨率」的短视频时画面应留黑边而不是铺满拉伸；②刷到带旋转元数据的竖屏视频时比例正确、不横向压扁；③播放中 Home → 回前台，`dumpsys window windows` 里该窗口的 `fl` 应重新含 `KEEP_SCREEN_ON`；④暂停/切后台时不得残留 `KEEP_SCREEN_ON`。
+
 ### 2.2 功能与工程待办
 
 - [x] ~~**「自动跳过片头片尾」处于撤回状态**~~ ——26.10.22 **已恢复**（默认关闭），恢复清单 ①–④ 已完成，⑤⑥（发版公告与版本号）随下次发版做。§3.3
@@ -147,6 +152,7 @@
 - [ ] **服务端没有告警渠道**：只有 systemd `Restart` + `health.log` 留痕（`*/10` 探活 cron 失败只追加一行，要真告警还得接通知渠道）。§42.9
 - [ ] **管理控制台只有口令登录**，没有 TOTP / IP 白名单；口令泄露 = 全部后台能力。§42.9
 - [ ] **控制台 WebUI 没有真机 / 真浏览器回归记录**（环境无浏览器），只验证了 HTML 结构与接口联通。§42.9
+- [ ] **控制台仍 pending 的 7 条反馈**（26.11.01 批量标已处理后剩余，逐条结论见 §3.99）：**#60** 老掉登录（要上周期性 Cookie 刷新）、**#48** 无法下载更新（疑似已被证书信任修复解决，已回管理员备注请用户升级后复测）、**#41** 静音拖进度出声（只在外挂音轨出现，等用户录屏）、**#34** 视频分段导致跳片头片尾（未定位）、**#31** 载入中切后台回来比例错（需真机复现）、**#30** 缓存文件夹「加入」按钮（功能请求）、**#20** 表冠转动慢（需原版终端倍率对照）。
 - [ ] **话题广场仍是单页**（`bottom = true`，不翻页）；`page_info.has_more` 已在数据里，将来要翻页可直接接。§三十四
 - [ ] **`WriteReplyActivity.kt` 的 `pendingUploads++/--`（`:224`/`:253`）未加同步保护**：已发现主线程入口与后台 `finally` 各改一次、无同步，「与本次用户报的 bug 无关，改动会引入无法验证的风险」→ **发现但不动**。§29.5
 - [ ] **§32 遗留的视觉面未动**：
@@ -923,7 +929,7 @@
 - **崩溃 159（pointerIndex，图片页）**：图片查看器的 `PhotoViewpager` 是裸 `ViewPager` 子类，没套 `SafeViewPager` 的指针兜底。把 `guardPointerIndexCrash` 提成文件级 `internal inline` 函数，`SafeViewPager` 与 `PhotoViewpager` 的 `onInterceptTouchEvent` / `onTouchEvent` 共用。
 - **崩溃 128/129（`BiliDanmukuParser` NumberFormatException）**：`p` 字段与高级弹幕的整数字段可能被上游写成小数（线上实测 `2188.43537415` 喂给 `Integer.parseInt`）。解析跑在 DFM 渲染线程上，异常逸出会打死整条线程。修法：`startElement` 的 `p` 解析包 try/catch（只丢这一条），`characters()` 拆成包装 + `charactersUnsafe()` 统一吞 `NumberFormatException`；`textArr[9]` 的时长改为 `Float.parseFloat` 后截断。
 - **崩溃 141（`AndroidDisplayer.draw` 的 DrawingCache NPE）**：`hasDrawingCache()` 为真时 `danmaku.cache` 仍可能已被置空，`.get()` 直接 NPE。改成 `danmaku.cache instanceof DrawingCache` 判空，取不到就退回直接画文字。
-- **控制台清账**：崩溃 82 → 12（70 条按「已修 / 老版本」标已处理，保留 12 条：`158`/`159`/`156`/`141`/`132`/`129`/`128`/`123`/`118`/`95`/`88`/`74`）；反馈 #52/#38/#46 已属「已修 / 已解答」，但控制台接口（MCP 侧）只暴露崩溃的 handled 开关、没有反馈的，需要在 WebUI 手动点。**标记已处理 ≠ 风险清除**：类 6 的 6 条已标，代码修复是这一轮才补回的。
+- **控制台清账**：崩溃 82 → 12（70 条按「已修 / 老版本」标已处理，保留 12 条：`158`/`159`/`156`/`141`/`132`/`129`/`128`/`123`/`118`/`95`/`88`/`74`）；反馈 #52/#38/#46 已属「已修 / 已解答」，但当时控制台接口（MCP 侧）只暴露崩溃的 handled 开关、没有反馈的，只能在 WebUI 手动点；**26.11.01 晚服务端补了 `feedback_set_handled` / `feedback_bulk_handled`，这批已在 §3.99 标掉**。**标记已处理 ≠ 风险清除**：类 6 的 6 条已标，代码修复是这一轮才补回的。
 - **验证**：
   - `:app:assembleDebug`（standard + coexist）通过；`:app:testStandardDebugUnitTest` / `:app:testCoexistDebugUnitTest` 各 107 suites / 1126 tests / 0 失败。
   - 设备侧（AVD `wear5`，`sdk_gwear_x86_64` / Android 14 / 466×466，装 `coexist-arm64-v8a-debug`）：#42 用空关键词连续横滑三次（视频 → 番剧 → 用户）后 `searchbar` 仍在 `y=58`、`keywordInput` 存在 ✔；#56 用 `aapt2 dump resources` 确认 8 个 `EditTextStyle*` 的 `android:textColorHighlight`（attr `0x01010099`）都指向 `color/text_selection_highlight` ✔（该 AVD 渲染本身放大溢出，**像素级对照不可信**，与 §3.80 结论一致）。
@@ -939,6 +945,474 @@
   - `assembleDebug` 双 flavor 通过；两 flavor 单测各 **109 suites / 1142 tests / 0 失败**（新增 `RoundListEffectMathTest` 9 例、`PlayerApiPlayUrlTest` 7 例，后者钉住「服务端 message 优先 / 只有接口码 / code=0 但无 durl / 响应为空」四种文案，并断言不再出现 `No value for`）。
   - 设备侧（AVD `wear5`、Android 14、466×466）：进 `aid=2` 详情页，logcat 可见 `playurl -> 200`、`history>819000,62131`、`qn_val>[80,64,16]`、评论首屏拉取成功，**没有走失败分支**（成功路径无回归）✔；把 `ui_round_list_effect` / `player_ui_round` 打开后冷启动重进菜单页，截图与关闭态不同——首/末项明显收窄变淡、中间项满宽，重构后曲率效果仍生效 ✔（测完已把两个开关恢复成关闭）。
   - **未验**：#80 的失败形态（要真的打开一个付费/充电专属稿件或该用户的那条稿件）与 #79 的长图评论（要真实评论区长图）都没能在模拟器上构造，靠两个纯逻辑单测钉住；AVD 渲染本身放大溢出，像素级版式结论不可信（同 §3.80）。
+
+### 3.98 短视频「画面被拉伸铺满整屏」与「保持亮屏丢失」（26.11.01，用户点名）
+
+- **缘起**：用户报「①短视频比例被强行拉伸成全屏 ②短视频保持亮屏功能丢失」，要求看代码定位并修。
+- **先记复现结论（防止误判成回退）**：在 AVD `wear5`（Android 14、466×466、已登录）上用 26.11.01 发行版跑完整个矩阵（默认设置 / 圆屏适配开 / 界面边距 5%·3% / 播放→暂停→恢复→上滑切条→Home→熄屏→横滑详情页→退出重进，两个 flavor 都测）：**两个症状都没复现**——12+ 条 `ANativeWindow_setBuffersGeometry` 全与视频尺寸同比例（`360x640 → 262x466`、圆屏 `228x406`），真在播时窗口 `fl` 一直含 `KEEP_SCREEN_ON`。`git log -S` 与逐行 diff 也确认 §3.90 回退范围不含短视频两文件、`6216c1c`（保亮屏）/ `fbe057f`（圆屏画面尺寸）都还在 HEAD —— **不是回退，是长期设计缺陷**；模拟器上「B 站合一 MP4 的 moov 带分辨率」「AVD/MuMu 不自带熄屏」正好把两条缺陷遮住（后者 §7.52 已记）。
+- **缺陷 1：画面尺寸只在 `onPrepared` 读一次**（→「拉伸成全屏」）
+  - `PageHolder` 从 `PlayerState` 只取一次 `videoWidth/videoHeight`，`adjustVideoSize()` 在 `videoWidth==0` 时**静默早退**，而 `TextureView` 初始是 `MATCH_PARENT` → 尺寸未知时画面一直铺满整页（连顶栏/底栏背后一起铺满）。
+  - 尺寸为什么会未知：尺寸消息来自容器 `codecpar`（`outputs/ijk-src/.../ff_ffplay.c` 先发 `FFP_MSG_VIDEO_SIZE_CHANGED` 再发 `FFP_MSG_PREPARED`），moov 没带分辨率（或被 `probesize=1024` / `analyzeduration=1` 的激进探测窗压掉）时就是 0；mediacodec 路径下解码器的补发被注释掉（`ffpipenode_android_mediacodec_vdec.c`），**0 一旦出现即永久 0**。而 `IjkPlayerBridge.setOnVideoSizeChangedListener` 一直在更新 `PlayerState`，**全仓无消费者**（断头路，自 initial commit 起）。
+  - 更常见的一条成因：`mediacodec-auto-rotate=1` 下容器给未旋转尺寸、解码器出旋转后的帧（同文件 `frame_rotate_degrees` 分支），而 `MEDIA_INFO_VIDEO_ROTATION_CHANGED` 以前没人消费 → 90/270 的竖屏视频按横屏比例摆框，观感同样是「拉伸」。
+  - 改法：`PageHolder.applyVideoSizeFromState()` 在 `startStateCollection()` 每轮采样里检查尺寸（去重，真变了才重摆），`onPrepared` 与 `updateVideoSize()`（接回 `onConfigurationChanged → onHostScreenSizeChanged()`，原先 `notifyScreenSizeChanged()` 零调用方）走同一入口，`releasePlayer()` 复位尺寸与去重字段；未知尺寸用 `fallbackRatio`（上一条有效比例，默认 16:9）退化，**绝不留 `MATCH_PARENT`**；`IjkPlayerBridge` 新增 `PlayerState.rotationDegrees` 并在 `setOnInfoListener` 接 `MEDIA_INFO_VIDEO_ROTATION_CHANGED`；尺寸计算抽成纯逻辑 `activity/video/ShortVideoLayoutMath.kt`。
+- **缺陷 2：保亮屏只挂在一个 setter 上**（→「保持亮屏丢失」）
+  - 判据链 `syncKeepScreenOn()` 要穿 `shellAdapter → activeFeedFragment → PageHolder` 四层；`onStart` 里那次重算必然早于 Fragment 的 `onResume`（此刻还在暂停态、算出来是 false），真正的恢复全靠 `onResume → resumeCurrent()` 再写一次 `isPlaying = true`；而 `wasPlayingWhenPaused` 依赖 `onPause` 那一刻 `activeHolder` 还在（被回收/换页时取到 false）→ 会出现「播放器其实在走、窗口没有 `KEEP_SCREEN_ON`」的窗口，真机就熄屏。
+  - 另两条方向相反的脱钩：`PageHolder.play()` 在 `!isPrepared` 时也把 `isPlaying` 置真（取流失败 / prepare 没完成 → 永久亮屏）；页面不可见时 prepare 完成仍会 `start()` 并置真，把标志加回已 stop 的窗口。
+  - 改法：`syncKeepScreenOn()` 叠**前台判据**（`isForeground`，`onStart`/`onStop` 维护，`onStop` 仍在兜底清）；新增 `onResume()` 与 `ShortVideoFeedFragment.onResume` / `onResumeAfterShellSwipe` 兜底重算；`isPlaying` 在 state 采样里跟 `playerBridge.isPlaying` 真值对齐；`play()` 加 `isPrepared` 守卫；取流失败 / `createPlayer` 失败 / `initPlayer` 异常三条路径补 `isPlaying = false`。
+- **验证**：
+  - `:app:assembleDebug`（standard + coexist）通过；两 flavor 单测各 **110 suites / 1152 tests / 0 失败**（新增 `ShortVideoLayoutMathTest` 10 例：9:16 / 16:9 letterbox、方形、非法比例退化、非法区域返回 null、旋转交换判据、圆屏内接圆与夹取）。
+  - 设备侧（AVD `wear5`，装 `coexist-universal-debug`；`adb install -r` 覆盖已装的 26.11.01，签名同为 debug key，登录态不丢）：默认设置进短视频页 —— logcat 出现新增的 `画面尺寸: 360x640（旋转 0°，区域 466x466）`，`ANativeWindow_setBuffersGeometry: w=262, h=466 => w=360, h=640`（9:16 居中留黑边，未拉伸）✔；窗口 `fl`：播放中 `KEEP_SCREEN_ON` ✔ → 暂停后消失 ✔ → 恢复后回来 ✔ → Home 后消失（新增前台判据生效）✔ → 回 App 自动续播且标志恢复 ✔；上滑切下一条：新页重新应用尺寸（日志只打一次，去重生效）+ 几何 `262x466` + 标志仍在 ✔。圆屏适配开（`player_ui_round=true`）：几何 `w=228, h=406 => 360x640`（内接圆矩形，228/406=0.5616 ≈ 360/640），播放中 `fl` 含 `KEEP_SCREEN_ON` ✔。测完已把 `player_ui_round` 恢复 `false`、原 26.11.01 安装包装回。
+  - **未验**：`videoWidth==0` 的真实流、旋转 90/270 的真实视频、`ui_landscape` / 非默认 `density`；信息流连刷 10+ 条全是 9:16 / rotation=0。前三项靠 `ShortVideoLayoutMathTest` 与代码走查兜底，真机用例登记在 §2.1。
+- **文档**：`docs/architecture-map.md` §7.52 补三道闸 + 新增 §7.58；`docs/agents/pitfalls.md` 保亮屏条目补三道闸、新增画面尺寸条目。
+
+### 3.99 菜单设置「改了保存不住、恢复默认」+ 控制台反馈批量标记已处理（26.11.01）
+
+- **缘起**：用户要求「再看看有没有新的反馈，然后把所有处理过的反馈标记已处理」。控制台新到一条 26.11.01 反馈 **#81**（OPPO OWW212）：菜单设置更改后无法保存、会恢复默认；同时控制台 MCP 服务端这次补上了反馈的写入能力（`feedback_set_handled` / `feedback_bulk_handled` / `feedback_note_add` / `crash_bulk_handled`），以前只能去 WebUI 手点。
+- **#81 根因**：`util/MenuConfig.kt` 只有一个严格解析入口 `parse(raw)` —— 任一 key 不在 `ALL_ITEMS`（公共 14 项 + `OPTIONAL_ITEMS` 私有项）或出现重复就直接返回 null。`loadEnabled()` 把「parse 失败」一律当成**旧数据**处理，走迁移分支用默认顺序/默认显隐重建并**写回** `menu_enabled`，于是用户的排序与显隐被静默清空。触发条件很现实：`menu_enabled` 里含公开包不认识的 key —— ①装过私有/BETA 包（菜单项如 `scan_qr` 来自私有 `FeatureHolder.menuKey()`），换回公开包后公开包不认它；②历史版本删改过菜单项留下的残 key。
+- **改法**：新增 `parseLenient(raw)` —— 丢弃不认识的 key、按原顺序保留、去重；`loadEnabled()` 严格解析失败后先走容错分支：清理结果非空且固定项（`FIXED_ITEMS`）都在 → 保留用户顺序、补齐缺失的 `OPTIONAL_ITEMS`、写回清理后的串并返回；只有连固定项都缺（真正的脏数据）才回退到原来的迁移/默认值。严格 `parse()` 的语义（含两条拒绝用例）保持不变。
+- **验证**：
+  - 新增 5 例单测（`MenuConfigTest` 现 29 例）：丢弃未知 key 与重复、保留私有 key、全脏时返回 null、**未知 key 时保留用户顺序而不是重置默认**（存 `settings;recommend;bogus_key;local;search` → 结果以 `settings` 开头）、固定项缺失时仍走迁移。`:app:assembleDebug`（standard + coexist）通过；两 flavor 单测各 **110 suites / 1157 tests / 0 失败**（较 §3.98 的 1152 例 +5）。
+  - 设备侧（AVD `wear5`，Android 14，466×466，`coexist-arm64-v8a-debug`）：先用调试桥把 `menu_enabled` 写成 `settings;recommend;short_video;popular;hotsearch;search;dynamic;myspace;message;local;scan_qr;bogus_key`（首项刻意不是默认的 `recommend`），打开 `SettingMenuActivity` 后重读 —— 变成 `settings;recommend;…;scan_qr`：**首项仍是 settings（顺序保住）、`bogus_key` 被丢弃**，修复前同样操作会被整份重置成默认顺序 ✔。测完把 `menu_enabled` 恢复成默认顺序。
+  - **未验**：真实 OPPO 手表上的现场（模拟器用 `bogus_key` 模拟「不认识的 key」）；「私有包 → 公开包」覆盖安装的真实升级路径没有走（要私有包产物）。
+- **控制台清账（本轮）**：把已处理/已解答/已拍板的反馈标已处理 —— **#78、#56、#55、#52、#51、#42、#38、#46、#49、#81**（其中 #55/#52/#51/#38 是 §3.79 修过、§3.96 补回回退的，#46 已由「左右滑动控制进度」设置项解答，#49 用户拍板不做）。保留 pending 7 条：**#60**（老掉登录，待上周期性 Cookie 刷新）、**#48**（无法下载更新，疑似已随证书信任修复，已加管理员备注请用户升级后再试）、**#41**（静音拖进度出声，只在外挂音轨出现，等录屏）、**#34**（分段导致跳片头片尾，未定位）、**#31**（载入中切后台回来比例错，需真机复现）、**#30**（缓存文件夹「加入」按钮，功能请求）、**#20**（表冠转动慢，需原版倍率对照）。崩溃侧本轮未动，仍是 12 条保留。
+
+### 3.100 收藏夹列表「Invalid view holder adapter position」崩溃（控制台 #160，26.11.01）
+
+- **缘起**：清账后控制台新到一条 26.11.01 崩溃 **#160**（hesc `uws6152_1h10_go`）：`java.lang.IndexOutOfBoundsException: Inconsistency detected. Invalid view holder adapter position … adapter:f1.d … context:FavoriteFolderListActivity`。堆栈是 release 混淆帧，用 `app/build/outputs/mapping/coexistRelease/mapping.txt` 还原：`f1.d` = `adapter.favorite.FavoriteFolderAdapter`，`p0.Y.l` / `p0.o.*` = `androidx.recyclerview.widget.RecyclerView$Recycler` 与 `GapWorker`（预取线程）。日志时序（10:32 列表页 → 编辑页 → 回列表页 → 再进编辑页）说明是**从编辑页返回后立刻重载**这条路径。
+- **根因**：`FavoriteFolderListActivity.loadFolders()` 在 `CenterThreadPool` 线程里直接 `folderList.clear()` + `addAll(...)`，而这份 `ArrayList` **就是当前已挂在 RecyclerView 上的 adapter 的备份数据**；新 adapter 还在后面才创建。后台线程清空的瞬间 `getItemCount()` 从「N+2」掉到 2，紧接着又长回 N+2，全程没有任何 notify —— 布局/预取线程拿着旧位置去取 holder，就抛这个 Inconsistency。`onActivityResult`（改名/新建返回）会立刻重载，所以「快速进出编辑页」最容易撞上。
+- **改法**：请求结果先在后台装进一份**全新的** `ArrayList`，不再碰旧列表；然后在 UI 线程一次性换掉 —— 新建 adapter、挂监听、`setAdapter`（基类内部再 `runOnUiThread` 赋值），并 `isFinishing || isDestroyed` 双重早退。旧 adapter 随替换被摘下，它引用的旧列表不再被任何人改写，itemCount 不会在无 notify 的情况下跳变。
+- **验证**：
+  - `:app:assembleDebug`（standard + coexist）通过；两 flavor 单测各 **110 suites / 1157 tests / 0 失败**。
+  - 设备侧（AVD `wear5`，Android 14，已登录 mid=591904067）：装新包后进「我的 → 收藏」，日志正常拉到默认收藏夹（1888/50000）、重要收藏夹（23/1000）等，页面正常渲染、无 FATAL / Inconsistency ✔。
+  - **未验**：原崩溃的精确触发（要在真机上「进编辑页改名保存 → 返回」并让预取线程刚好在重载窗口取 holder），本次以「不再共享可变列表」的线程模型改造 + 页面正常加载为准；该崩溃 1 次、单机型，先观察后续上报。
+
+### 3.101 外置 SD 卡上的缓存视频用凉腕播放器播放崩溃：`Failed to find configured root`（26.11.01，用户现场）
+
+- **现场**：用户（Android 6.0 手表，凉腕播放器 5.1.0，硬解 / TextureView / AudioTrack）把设置里「缓存路径」改到外置 SD 卡后，点缓存视频用凉腕播放器播放即崩：`java.lang.IllegalArgumentException: Failed to find configured root that contains /storage/5C00-1D0E/Android/media/com.RobinNotBad.BiliClient.coexist/<标题>/video.mp4`，栈顶 `androidx.core.content.FileProvider.d(SourceFile:180)`。崩溃发生在**拉起播放器之前**（`PlayerApi.getVideoUri` 里），与硬解 / Surface / 音频输出设置无关。
+- **根因**：androidx 的 FileProvider 只认**主卷** —— `file_paths.xml` 的 `<external-path>` 取 `Environment.getExternalStorageDirectory()`，`<external-media-path>` 取 `getExternalMediaDirs()[0]`（1.13.1 源码实测）。用户在配置里把缓存目录指到外置卷后，路径形如 `/storage/5C00-1D0E/Android/media/<包名>/…`，没有任何配置根包含它，`getUriForFile` 直接抛异常。XML 是编译期资源，没法按当前挂载的卷动态长根；历史能覆盖它的 `<root-path path="" />` 已被审计 M12-e 删掉。完整分析见 `docs/architecture-map.md` §7.59。
+- **改法**：新增 `util/LocalFileProvider.kt`（只读 `ContentProvider`，authority `${applicationId}.LocalFileProvider`，URI `content://…/f/<Uri.encode(规范绝对路径)>`）+ `util/SharedFileRoots.kt`（运行时收集所有存储卷的根：主卷根、每块卷的 `files` / `cache` / `media` 应用专属目录、由 `/Android/` 段反推的卷根、内部 `filesDir/video`）+ `util/SharedFilePolicy.kt`（纯函数归属判断，`SharedFilePolicyTest` 14 例）。`PlayerApi.getVideoUri` 先照旧走 FileProvider，捕获 `IllegalArgumentException` 后改走自建 provider；两者都拿不到 URI 时返回 null，`jumpToPlayer` 回落 `buildTerminalPlayerIntent()`（从原 `terminalPlayer` 分支原样抽出，逐字段等价）用内置播放器打开并提示 `msg_player_local_share_fallback` —— 分享文件失败不再带崩缓存页。安全边界与 `file_paths.xml` 注释、`docs/agents/pitfalls.md` 已同步（`exported=false` + `grantUriPermissions`，只读，先 `canonicalPath` 再判根，不提供枚举）。
+- **验证**：
+  - `:app:assembleDebug`（standard + coexist）与 `:app:assembleRelease`（standard + coexist，R8）均通过；两 flavor `*DebugUnitTest` 各 **111 suites / 1171 tests / 0 失败**（比本轮前 110 / 1157 新增 `SharedFilePolicyTest` 14 例、合计 +1 suite +14 tests）。
+  - 发布包静态复核：`app/build/outputs/mapping/*Release/mapping.txt` 里 `com.RobinNotBad.BiliClient.util.LocalFileProvider -> com.RobinNotBad.BiliClient.util.LocalFileProvider`（类名没被 R8 改掉）；`app-coexist-universal-release.apk` 的清单里 provider 的 `exported=false` / `grantUriPermissions=true` / `authorities=com.RobinNotBad.BiliClient.coexist.LocalFileProvider` 都在。
+  - **模拟器端到端（主证据：API 23 / Android 6.0，AVD `rebili_api23_sd`，512M SD 卡，外置卷 `/storage/0000-0000`，coexistDebug）**：
+    - 旧包（未修复的 HEAD `47c8a41` 用 `git archive` 独立构建）点外置卷缓存即崩，异常类型 / 消息 / 栈帧（`FileProvider$SimplePathStrategy.getUriForFile` → `PlayerApi.getVideoUri` → `jumpToPlayer` → `CacheListAdapter.playVideo`）与用户现场同型，系统弹「已停止」，全程 0 条外部播放器日志（崩在 `startActivity` 之前）；
+    - 修复包（16:30:57 构建）：不崩、`logcat -b crash` 为空；日志出现「文件不在 FileProvider 配置根内（多为外置卷），改走 LocalFileProvider」；stub 播放器（`com.aliangmaker.media` / `PlayVideoActivity`，另一进程另一 UID：应用 10061 / stub 10062）收到 `content://<包名>.LocalFileProvider/f/%2F…`，`readGrant=true`，`ContentResolver.openInputStream` 读到 **55,881 B = 夹具文件大小**，`getType` = `video/mp4`；
+    - 主卷回归：缓存路径改回 `/storage/emulated/0/Android/media/<包名>` → URI 回到 `content://<包名>.FileProvider/ext_media_root/…`，stub 同样读到 55,881 B、应用不崩。
+    - 补充证据（API 37 / Android 17，`rebili_api37_sd`）：旧包在同一 AVD 上以用户现场那种 `…/Android/media/<包名>` 路径复现同型崩溃。
+  - **仍未覆盖 / 边界**：真机 Android 6.0 手表 + 真实凉腕播放器 5.1.0（模拟器用 stub 播放器验证的是「跨进程拿到 content:// 并读到字节」这条机制，不是凉腕 UI）；API 23 模拟器上 app 进程没有 `media_rw` / `sdcard_rw` 补充组、写不进 SD 的 `Android/media`，所以那一轮的复现路径是同卷 `Android/data/<包名>/files/video`（同根因、同异常、同栈），「真机 SD 的 `Android/media` 可写 + `getExternalMediaDirs()` 枚举到外置卷」这条具体路径目前只有单测覆盖；内置播放器兜底分支与非 mp4 扩展名（`m4s` / `m4a`）未端到端构造。真机回归项见 `docs/review/real-device-regression-checklist.md` 第 250 条。
+
+### 3.102 圆屏适配：首页/推荐页的时钟被顶到屏幕最右、被圆盘切掉（26.11.01，用户点名）
+
+- **现场**：用户给了两张顶栏截图 —— 期望图是「时钟居中、下面『⌄ 推荐』居中」，实际图是「时钟贴在屏幕最右上、标题居中」。原话：「开启圆屏适配后的期望效果是图一，可是目前是图二的状态，请修复」。
+- **根因**：`res/layout/activity_simple_main_refresh.xml` 是全工程**唯一**把 `@id/timeText` 套进一层 `@id/menuArea`(LinearLayout, `alignParentRight`) 的顶栏布局（其余 40+ 个布局的时钟都是 `@id/top`(RelativeLayout) 的直系子 View）。`BaseActivity.setRound()` 的圆屏分支靠 `newTopbarParams(clock).addRule(RelativeLayout.CENTER_HORIZONTAL)` 把时钟挪到正中；时钟在 LinearLayout 里时 `newTopbarParams` 返回的是 `LinearLayout.LayoutParams`，`if (clockParams is RelativeLayout.LayoutParams)` 判假 → 居中规则被静默跳过，时钟仍由 `alignParentRight` 钉在最右。5 个用该布局的页面全部中招：`RefreshMainActivity`（含「推荐」页 `activity/video/RecommendActivity.kt`）、`RankingActivity`、`PopularActivity`、`PreciousActivity`、`video/local/LocalListActivity`。
+- **改法（只改布局，不动代码逻辑）**：删掉 `menuArea`，把 `timeText` 提成 `@id/top` 的直系子 View（保留原 `alignParentRight/End` + `marginEnd=8dp` / `marginVertical=3dp`），`pageName` 的 `layout_toStartOf` 从 `@id/menuArea` 改指 `@id/timeText` —— 顶栏结构与 `activity_simple_refresh.xml` 等其余布局完全一致，`setRound()` 不需要任何新分支。顺带把 `BaseActivity.setRound()` / `newTopbarParams()` 里点名 `menuArea` 的注释改成现状（保留「按真实父容器判型」的防御分支）。
+- **验证**：
+  - `:app:assembleDebug`（standard + coexist）通过；两 flavor 单测各 **111 suites / 1171 tests / 0 失败**。
+  - 设备侧（AVD `wear5`，Android 14 / 466×466 / 320dpi 圆屏，装 `coexist-universal-debug`，`player_ui_round=true` + `paddingH_percent=5` / `paddingV_percent=3`）：
+    - **修前（复现）**：`pageName [184,41][282,83]`（居中 ✔）、`timeText [380,13][443,46]`（钉最右 ✘）；截图顶栏 x330–466 全黑——圆屏遮罩在 y=30 处只亮到 x≈347，时钟整块落在圆盘外被切掉，与用户图二同型。
+    - **修后**：`pageName [184,41][282,83]`、**`timeText [201,13][264,46]`（中心 232.5 ≈ 屏中心 233 ✔）**；像素扫描顶栏第一行亮像素 x203–262（中心 232）、第二行 x192–271（中心 231），截图与用户图一一致。
+    - 同布局的另外 3 页同样修好：`PopularActivity` / `RankingActivity` / `PreciousActivity` 的 `timeText` 均为 `[201,13][264,46]` ✔。
+    - **回归对照（`player_ui_round=false`，同一页）**：`pageName [39,19][355,61]`、`timeText [355,19][427,57]`（右边距 427 = 内容右 443 − 8dp×2 = 16），顶栏高 54 = 标题高 42 + 2×3dp，与改前逐项一致 —— 非圆屏版式零变化。
+    - 参照页 `settings/SettingMainActivity`（本来就走直系子 View 的布局）同一套设置下 `timeText [201,13][264,46]`，两处口径一致。
+  - **未验**：真圆屏手表上的肉眼观感（本机只有 AVD）。
+- **文档**：`docs/agents/pitfalls.md`「伪装与顶栏手势」补一条「顶栏时钟不能包在 LinearLayout 里」；`docs/architecture-map.md` §8.5 补第 12 条。
+
+### 3.103 「我的反馈」空态点顶栏不退出、改成原地刷新（26.11.02，用户点名）
+
+- **现场**：用户报「我的反馈界面点击顶栏不会退出，而是会刷新」。「我的反馈」列表为空时（新装、或本机没提交过反馈），点顶栏标题区域不返回上一级，而是出现刷新转圈并重拉一次列表。
+- **根因**：`res/layout/activity_simple_refresh.xml` 的空态浮层 `emptyTip` 排在 `top` **之后**声明，且 `layout_width/height=match_parent` —— RelativeLayout 里后声明的兄弟节点画在更上层，触摸也**从后往前**派发，于是它把整条顶栏盖住。多数页面只是「空态长文案压住标题」（`emptyTip` 不可点，点击会穿透回 `top`），但 `RefreshListActivity.setOnEmptyRetry()` 会给它装 `OnClickListener`（`isClickable=true`），此后再点顶栏就全归空态：`hideEmptyView(); setRefreshing(true); action.run()`，「我的反馈」的 action 正是 `load()` → 用户看到的就是「点了顶栏，页面刷新」。`activity_simple_main_refresh.xml` 是同一份模板的复制品（首页/推荐页的菜单栏），同样中招。
+- **改法（只改布局，不动任何 Java/Kotlin 逻辑）**：两个布局的 `emptyTip` 各加 `android:layout_below="@id/top"` —— 空态只铺列表区，顶栏重新可点；顺带解决空态文案压住顶栏标题的观感问题。`setOnEmptyRetry` 的「点空态重试」语义保留（空态区域本身仍可点）。
+- **验证**：
+  - `:app:assembleDebug`（standard + coexist）通过；`testStandardDebugUnitTest` **111 suites / 1171 tests / 0 失败**（与改前同基线，本改动没有新增/删除用例）。
+  - 设备侧（AVD `wear5`，Android 14 / 466×466 / 320dpi，装 `coexist-arm64-v8a-debug`，用 DebugBridge `start FeedbackListActivity` 直达页面，列表为空）：
+    - **修前（复现）**：`emptyTip [23,13][443,440]` 与 `top [23,13][443,122]` 完全重叠；点屏上 `(233, 65)`（顶栏标题处）→ 前台仍是 `FeedbackListActivity`，logcat 出现 `GET https://rebiliterminal.zsapp.asia/terminal/feedback/mine -> 200`，即「刷新而不退出」，与用户描述一致 ✔；
+    - **修后**：`emptyTip [23,122][443,440]`（落在 `top` 下方）；同一点位点击 → 前台变为 `SettingMainActivity`（上一级），logcat 无 `/feedback/mine` 请求，正常退出 ✔；
+    - 点空态自身区域 `(233, 233)` 仍会 `GET /feedback/mine`，说明「点我重试」没有被改坏 ✔。
+  - **未验**：真手表上的实际手感；非空列表态（`emptyTip` 此时 `GONE`，改动不参与，顶栏点击路径与改前完全一致）没有另行实点。
+- **文档**：`docs/agents/pitfalls.md`「基类与列表」补一条「空态浮层必须 `layout_below="@id/top"`」。
+
+### 3.104 按钮文字换行 + 基线对齐导致「同一行按钮对不齐」（26.11.02，用户点名，共性问题）
+
+- **现场**：用户先贴了一张手表实拍（某工具页），再补一句「视频详情页里也有这个 bug，所以这是按钮的共性问题」——同一排的两颗按钮，一颗文字折成两行、另一颗一行，两颗按钮上下边缘错开，整块看起来像布局崩了。
+- **根因（三层叠加）**：
+  1. 主题里 8 个按钮样式此前都直接继承 `Widget.MaterialComponents.Button`，**没有限制文字行数**。手表内容区只有 200dp 出头，两个按钮各占一半时每颗内容宽 ~70～100dp；5～6 个汉字的标签（「从剪贴板粘贴」「稍后再看」等）在系统字体放大后会折成两行。
+  2. 横向 `LinearLayout` 默认 `baselineAligned="true"`：两颗按钮按**文字基线**对齐，一旦行数/字号不同，较矮那颗会被整体上下平移，于是上下边缘都错开。
+  3. 系统「字体大小」越大越明显；同一份布局在经典终端主题（按钮左右 padding 2dp）能撑住，在 16dp padding 的主题下更早折行，所以问题「看主题、看设备」偶发。
+- **改法**：
+  - 新增 `res/values/styles.xml` 的 `ButtonStyleBase`：`android:maxLines=1` + `android:ellipsize=end` + AppCompat 自动字号（`autoSizeTextType=uniform`，7～14sp、1sp 步进）。8 个主题按钮样式（`ButtonStyle` / `ButtonStyleLight` / `ButtonStyleZhihu` / `ButtonStyleIQIYI` / `ButtonStylePurpleFantasy` / `ButtonStyleRainbow` / `ButtonStyleClassicGray` / `ButtonStyleTerminal`，玻璃变体随父样式）统一改为继承它 → 所有 MaterialButton 永远单行，放不下就缩字号，不折行。
+  - **保留多行/写死字号的例外**（避免修 A 坏 B）：`cell_episode.xml`、`cell_item_vertical.xml`（番剧标题、看点的「内容\n时间段」）与 `item_menu_setting_help.xml`（展开后的多行说明）在布局里覆盖 `maxLines=10` + `autoSizeTextType=none`；`activity_captcha_webview.xml` 三个缩放键、`activity_feedback.xml` 提交键、`activity_image_picker.xml` 与 `activity_send_dynamic.xml` 各两键、`cell_subtitle.xml` 用 `autoSizeMaxTextSize` 把上限钉回原字号；`TutorialManagerActivity` 程序化创建的 11sp 按钮用 `setAutoSizeTextTypeUniformWithConfiguration(7, 11, 1, SP)`。
+  - 多按钮横排的 `LinearLayout` 补 `android:baselineAligned="false"`：`fragment_video_info.xml`（两行）、`fragment_media_info.xml`、`activity_image_picker.xml`、`activity_update.xml`、`activity_send_dynamic.xml`、`activity_captcha_webview.xml`；另有一个可选私有功能页的同类布局在私有仓库单独提交。
+- **验证**：
+  - 纯净 worktree（`git worktree` at HEAD `9580444` + 本改动，公开配置）：`:app:assembleDebug`（standard + coexist）通过；`testStandardDebugUnitTest` 与 `testCoexistDebugUnitTest` 各 **108 suites / 1125 tests / 0 失败 0 错误 0 跳过**（本改动不新增用例）。
+  - AVD `wear5`（Android 14 / 466×466 / 320dpi，`coexistDebug` + 私有源码注入）实测：
+    - `font_scale` 1.0 / 1.3 / 1.5 / 2.0 逐档看按钮：视频详情页（aid=170001）的「稍后再看 | 缓存」「转发 | 视频摘要」两排、工具页的「粘贴 | 打开」在 1.5 与 2.0 下都是**单行、同高、上下边缘齐平**；2.0 档长标签自动缩到 7sp 仍不折行；
+    - 回归：菜单页（全宽按钮）、菜单设置（「使用说明」点开后仍是多行说明，无截断）、搜索设置（8 字按钮「调整搜索类别排序」单行）、内置选图页（「全部图片 | 系统选择器」同高）、教程管理（程序化 11sp 按钮）；
+    - 未验：真手表；播放页「看点」列表与竖版选集（`cell_episode` / `cell_item_vertical` 只解除了单行限制，本机没造出可实点的播放场景）；验证码页 WebView 在该 AVD 上不可用（页面直接提示 WebView 不可用），只确认布局能 inflate。
+  - **本机 AVD 的通用问题（与本次改动无关）**：改 `font_scale` 会触发整进程重启，重启后可能弹「夜深了」/debug 包警告等启动弹窗；用 DebugBridge 先把 `night_reminder_enable=false`、`disclaimer_shown=true`、`app_version_last` 写成当前版本号再测，能省掉反复点弹窗。
+- **文档**：`docs/agents/dev-conventions.md` 新增「按钮文字与行内对齐」一节（含例外写法与自测口径）。
+
+### 3.105 控制台 11 条「代码无修复 / 未做」反馈批量修复（26.11.02，用户点名，代码审计后）
+
+- **缘起**：用户要求用控制台 MCP 核对 47 条反馈的「完成情况」，对照 HEAD 提交发现 13 条「代码里根本没有对应修复 / 压根没做」；用户勾选其中 11 条要求修复（未选 #20 表冠慢、#82 短视频长按倍速）。
+- **本轮修复（每条：改法 + 关键文件）**：
+  - **#84** 消息页空列表必现 IOOBE：`PrivateMsgApi.getUsersInfo` 空 uidList 发请求前返回空 map；`MsgUtil` 只在异常信息带 RecyclerView/Adapter 特征时才提示「Adapter错误」，其余按普通错误显示原文（`util/AdapterErrorClassifier` + 单测）。
+  - **#60** 老是掉登录：新增 `util/CookieRefreshPolicy`（30 分钟正常间隔、失败 5min 起指数退避封顶 4h、-101 边界）与 `util/CookieRefreshScheduler`（`BiliTerminal.onCreate` 进程级启动、5 分钟扫描；`NetWorkUtil` 统一响应入口识别「带 SESSDATA 仍 -101」只打标记）。不用 WorkManager/AlarmManager、不新增依赖。
+  - **#61** 长按倍速可配置：`activity/player/PlayerLongPressPolicy`（1.5/2/3/5，默认 3.0）+ 设置页「长按倍速档位」；长按处每次重读（改完即生效）。
+  - **#83** 多P续播：`PlayerData` 补 `cidHistory` 进 Parcel 并新增 `lastPlayTimeMs`；`activity/video/MultiPageResumePolicy`；详情页点播放命中记录直接起播上次分P；`MultiPageActivity` 修正「点上次那P却播P1」并滚到该P。
+  - **#41** 静音拖进度出声：`activity/player/AudioSeekVolumePolicy` + `syncExternalAudioPlayback()`；外挂音轨只在「能听见且视频在播」时运行，静音即暂停、解静音先对齐再起播；`initAudioTrack` 先设增益再 prepare/start。
+  - **#31** 载入中切后台回来比例怪：`activity/player/PlayerScreenMetricsPolicy`；缓存上次有效源尺寸，`onResume` / Surface 重建时重读屏幕尺寸并重排画面（不动播放状态）。
+  - **#34** 分段导致误跳片头片尾：`activity/player/SkipDecider` 状态机；换P 立即清空片段、在途 `view_points` 响应按 aid/cid/代次丢弃、重复拉取不清已处理。
+  - **#14** 图片双击缩放：双击识别挪到 `PhotoViewpager.dispatchTouchEvent` 旁路 GestureDetector（不吞事件），`ImageViewerActivity` 用 `ImageViewerZoomPolicy` 显式 1x→2x→6.25x→1x，动画后校验被 reset 就补钉。
+  - **#17** 评论区图片下载：`DownloadActivity` 新增 `PictureDownloadPolicy`（URL 补 https、失败换协议重试、文件名剥 `@`/查询串/非法字符）；看图页下载改单击直接开始（连点闸门）；图片成功/失败提示 SnackBar→Toast（页面 finish 后仍可见）。
+  - **#54** 界面边距>0 触控偏移：`BaseActivity` 把用户边距从 DecorView 下沉到 `android.R.id.content`；padding 算术本身不改触摸命中（推导见 KDoc），真机仍待验。
+  - **#58** 缓存删不掉：`util/CachePathResolver` 按「条目实际所在根 + 模型真实路径」解析候选目录；`FileUtil.deleteFolderRecursively` 空目录也删、按「目标是否真的不存在」返回结果；`LocalListActivity` / `LocalPageChooseActivity` 失败不再谎报成功、不摘条目。
+- **验证**：`:app:assembleDebug`（standard + coexist）通过；`:app:testStandardDebugUnitTest` / `:app:testCoexistDebugUnitTest` 各 **123 suites / 1297 tests / 0 失败 0 错误**（本轮新增 12 个测试类 / 125 例）。
+- **未验 / 遗留**：#41（需真机：系统媒体音量 0 时暂停外挂音轨）、#31（需真机复现「载入中切后台再回来」）、#34（需真机多P 连切）、#54（根因未确证，HWARC 真机需复验）；#17 将「3 秒二次点击」改为单击直接下载（用户可见交互变化）；#83 命中续播记录时「点播放」不再进选集页而是直接起播上次分P（另一P 走播放器内选集）；#58 在 Android 11+ 公共目录、无本应用写权限的旧文件仍删不掉，现在会如实报错。
+
+### 3.106 长按加速期间横滑又会调进度（§3.90 回退砍掉 §3.81 门闸，26.11.02 补回）
+
+- **缘起**：用户报「在长按倍速的情况下滑动会触发滑动调节进度」。这条 26.10.30 已修（§3.81，commit `1bff1f0`），26.10.31 末播放器整目录回退（§3.90，commit `7c94531`）时被一起砍掉；§3.96（commit `e39f5c5`）只补回了 4 条中的 3 条，这条一直缺——但 §3.81 与 `docs/architecture-map.md` 仍写着已修，属于**文档与代码不一致**。
+- **机制**：长按加速走 `layout_control.setOnLongClickListener`（View 自带 500ms 判定，手指在界内横移不会取消长按回调）。长按回调置 `onLongClick = true` 并设倍速后，`ACTION_MOVE` 里只要横移超过 `swipeSeekThreshold`（24f）就仍会激活 `swipe_seek_overlay`、改 `seekbar_progress`，UP 时还会真的 seek 过去。反向顺序（先横滑后长按）本来就不会误加速：横滑会置 `gesture_click_disabled`，长按回调里有 `!gesture_click_disabled` 守卫。
+- **改法**：
+  - `activity/player/PlayerGesturePolicies.kt`：`PlayerSwipeSeekPolicy.isSeekAllowed(...)` 增加第 7 个参数 `longPressBoost: Boolean`（**不设默认值**，逼每个调用点显式表态），判据追加 `&& !longPressBoost`；KDoc 写明「26.11.02 原样补回，别当没做过」。
+  - `activity/player/PlayerActivity.kt`：`handleSwipeSeekTouch()` 把 `onLongClick` 传进去，门闸拒绝时复用 `cancelSwipeSeekIfActive()` 收残留浮层；新增 `private fun endLongPressBoost()`（恢复 `speed_values[seekbar_speed.progress]` 到 IJK / 弹幕 / 倍速文案）。**两套 `layout_control` 触摸分支的 ACTION_UP 与 ACTION_CANCEL 都要接**：只接 UP 时，触摸被父容器/失焦 CANCEL 后 `onLongClick` 会卡 true → 横滑调进度被永久拦掉、倍速也停在高档。
+  - `player/PlayerGesturePoliciesTest.kt`：新增 `longPressBoost_blocksSwipeSeek`、`longPressRelease_restoresSwipeSeek` 两例（该类共 11 例）。
+  - 文案/文档侧不用改：`strings.xml:1230` 的设置说明从 §3.81 起就是「未缩放视频、未长按加速时生效」，`docs/FEATURES.md` 同口径——当年没被回退，只有代码被砍了。
+- **验证**：`:app:assembleDebug`（standard + coexist）通过；`testStandardDebugUnitTest` **123 suites / 1299 tests / 0 失败 0 错误 0 跳过**（比 §3.105 多 2 例，正是本次新增）。AVD `wear5`（Android 14 / 466×466 / x86_64，装 `app-standard-universal-debug`）实测（DebugBridge 把 `player_swipe_seek` / `player_scale` / `player_longclick` 置真，本地 `combined.mp4` 起播）：
+  - **bug 用例**：`input motionevent DOWN` 按住 1.2s（logcat `gesture>longclick_down speed=3.0`、`Playback rate: 3.000000`）后横移 147px——中途截图**没有** `swipe_seek_overlay`，进度只按 3 倍自然前进（12:08→12:25）；UP 后 `Playback rate: 1.000000`。
+  - **对照组**（同一注入手法，证明 MOVE 确实被消费，不是没打到）：普通横滑同位移 → 浮层出现 `12:08 / 34:15 (35%)`，UP 后进度真的从 01:08 跳到该点（下一次 dump 已 12:25，含继续播放）。
+  - **CANCEL 用例**：长按后发 `input motionevent CANCEL` → 倍速回落 1.0；紧接着普通横滑仍能出浮层（`23:32 / 34:15 (68%)`）→ `onLongClick` 没卡 true。
+- **遗留**：未在真手表上验；注入的 DOWN/MOVE 之间没有真人手指的微抖，但三条判据（浮层有无、倍速回落、seek 结果）都来自应用自身行为，对照组成立即可信。
+
+### 3.107 带图评论：发图失败 + 不该按大会员前置拦截（26.11.02，用户点名）
+
+- **结论先说，避免误读**：
+  - **确定改对的两件**：① 图床 `biz` 从自造值 `new_reply` 恢复成 `new_dyn`（评论 `pictures` 只认该 BFS 目录，上游 PiliPlus 同口径）；② 删除「带图评论仅大会员可用」的前置拦截，资格交还服务端判定。
+  - **未确证的**：**12066 的确切语义仍然没拿到**（本地 `bilibili-API/` 与上游 collector 的错误码表都未收录）。本次**不是**「证明 12066 就是 biz 造成的」，而是把 26.10.02 引入的确定性偏离改回官方口径，并让失败时能看见服务端的码与原话。若仍失败，下一步是拿日志里的 code/message 再收敛。
+- **根因 1（biz 被改错）**：提交 `3058512`（26.10.02，批次 6 F3-c）把 `upload_bfs` 的 `biz` 由 `new_dyn` 改成 `new_reply`，提交说明写「用 new_dyn 会被服务端当成动态图处理」——这是误判，`biz` 只决定图片落在哪个 BFS 目录，与"业务类型校验"无关。上游 PiliPlus 评论图与动态图共用 `biz:'new_dyn'`（`lib/pages/common/publish/common_rich_text_pub_page.dart:515-519`），只有私信才用 `im`（`lib/pages/whisper_detail/view.dart:329-331`）。改错后的表现：**图能上传成功，发评论时被服务端以 12066 拒绝**（与 26.10.04 用户反馈的症状一致）。
+- **根因 2（不该拦）**：`3b70a2b`（2026-08-16）给「图片」按钮加了 `VipApi.getVipInfo()` 前置检查，非大会员直接 toast「带图评论仅大会员可用喵~」。图片评论的资格应由服务端判定，客户端拦只会把服务端其实允许的用户挡在选图页外（26.11.02 用户点名：发图不需要大会员）。
+- **改法**：
+  - `api/ReplyApi.java`：`BIZ_DYNAMIC = "new_dyn"`（动态图 + 评论图），新增 `BIZ_MESSAGE = "im"`（私信图），**删除 `BIZ_REPLY`**；`uploadReplyImage` 失败改为抛 `UploadException(code, serverMessage)`，并 `Log.e("debug-上传图片", code/message/biz)`（只记码与原话，不记整包响应）；新增 `SendReplyResult` + `sendReplyDetailed(...)` 把服务端 `message` 带回来，旧 `sendReply(...)` 委托它（行为不变）。
+  - `api/ImageApi.java`：常量与类注释同步（`BIZ_MESSAGE`，评论/动态共用 `BIZ_DYNAMIC`）。
+  - `api/ApiErrorText.kt`：新增纯函数 `uploadFailed(code)`——-101 未登录 / -102·-111 凭证失效 / -352·-412 风控 / -400·4100001 图片不被接受 / -509 太频繁 / 其余带错误码。
+  - `activity/reply/WriteReplyActivity.kt`：删掉 VIP 前置检查与 `VipApi` import（点「图片」直接进内置选图页，仍保留 9 张上限）；上传失败按 `UploadException.code` 翻人话；发送失败优先用 `msgMap`，**未收录的码回落到服务端原话**；另修一个同链路缺陷：服务端 `code=0` 但 `data.reply` 为空时按成功处理（评论已发出，原先会在 `resultReply.forceDelete` 处 NPE 并被 `MsgUtil.err` 当成失败，诱导用户重发）。
+  - `activity/message/PrivateMsgActivity.kt`：私信图 biz 由 `BIZ_REPLY` 改为 `BIZ_MESSAGE`（`/bfs/im/`）。
+  - `util/UiText.kt` + `res/values/strings.xml`：删除已无引用的「带图评论仅大会员可用喵~」（`uitext_writereplyactivity_003`）。
+  - 单测：`ReplyApiTest.imageBiz_commentSharesDynamicDirectoryAndMessageUsesIm`（钉死两个 biz 值）、新增 `ApiErrorTextTest`（未登录≠凭证失效、4100001 提示换图、-509 提示频繁、未知码带码）。
+- **验证**：`:app:assembleDebug`（standard + coexist）**BUILD SUCCESSFUL**；`:app:testStandardDebugUnitTest` 与 `:app:testCoexistDebugUnitTest` 均 **125 suites / 1311 tests / 0 失败 0 错误**（机器产出 `app/build/test-results/*` 计数）；本轮新增 `ApiErrorTextTest`（5 例）与 `ReplyApiTest.imageBiz_commentSharesDynamicDirectoryAndMessageUsesIm`（1 例）。
+- **遗留**：12066 语义未确证；本机无在线设备（`adb devices` 为空），**未做真机复验**。复现时看日志 `debug-上传图片`（code/message/biz）与 `debug-发送评论`（服务端整包 code/message），可直接判断是"图床拒收"还是"评论接口拒收图片"。
+
+### 3.108 新增「我的订阅」：我订阅的收藏夹 / 合集（26.11.02，用户要求照 PiliPlus 实现）
+
+- **可见功能**：「我的」页新增「订阅」入口。列表显示我订阅的收藏夹/合集（封面、标题、UP 主、类型与视频数、失效置灰）；点收藏夹进**只读**收藏夹内容页，点合集进新的「合集详情」页；长按条目二次确认后取消订阅。
+- **接口事实**（PiliPlus `lib/http/fav.dart` / `lib/http/user.dart` + 本地 `bilibili-API/docs/fav/info.md`）：
+  - 列表 `GET x/v3/fav/folder/collected/list?platform=web&up_mid=&pn=&ps=20`。**`platform=web` 必带**，否则不返回合集；每项 `type=11`（收藏夹，`id`=media_id）/ `type=21`（合集，`id`=season_id），`state=1` 失效。
+  - 合集详情 `GET x/space/fav/season/list?season_id=&pn=&ps=20`（返回 `info`+`medias`，**不是** `ugc_season`）。
+  - 取消：`POST x/v3/fav/folder/unfav`（`media_ids`，-400 时回退单数 `media_id`，与 PiliPlus 口径兼容）/ `POST x/v3/fav/season/unfav`（`season_id`+`platform=web`），均带 `csrf`。
+- **改动**：
+  - 新增 `model/SubscriptionFolder.java`、`api/SubscriptionApi.java`（解析拆纯函数）、`adapter/subscription/SubscriptionFolderAdapter.kt`、`res/layout/cell_subscription_folder.xml`、`activity/user/subscription/{SubscriptionListActivity,SubSeasonDetailActivity}.kt`。
+  - `MySpaceMenu` 加 `subscription` 项与跳转；`MySpaceConfig.ALL_ITEMS` 同步（`MySpaceConfigTest` 守卫通过）；manifest 注册两个 `exported=false` + `screenOrientation=locked` 的 Activity；`strings.xml` 新增 2 个 pagename + 4 个 text + 7 个 msg，**无硬编码中文**。
+- **验证**：
+  - `:app:assembleDebug` 两 flavor **BUILD SUCCESSFUL**；`:app:testStandardDebugUnitTest` / `:app:testCoexistDebugUnitTest` 均 **125 suites / 1311 tests / 0 失败 0 错误**（含新增 `SubscriptionApiTest` 6 例：收藏夹/合集混合解析、脏条目跳过、可选字段兜底、合集视频与总数、空/缺字段不崩）。
+  - AVD `wear5`（466×466 圆屏）实测：我的 →「订阅」→ 页面标题「我的订阅」、空态「啥都木有~ 点我重试」、底部「没有更多了」；logcat 确认请求 `collected/list?...platform=web&pn=1` → `200`、`{"code":0,...,"data":{"count":0,"list":[],"has_more":false}}`（**勘误见 §3.109：该账号当时已登录过期，匿名请求也会返回这个结果，不是「0 条订阅」**），**无崩溃/无 ANR**。
+- **遗留**：① 测试账号 0 条订阅，**列表渲染、点击进夹/进合集、长按取消订阅三条路径未在真机走到**，需有订阅数据的账号复验；② `/x/space/fav/season/list` 的 200 响应字段只有 PiliPlus 源码作依据（本地 API 快照没有该接口），首次用真实 season_id 跑一次后建议把实测响应补进 `docs/bilibili-api-notes.md`；③ `folder/unfav` 的参数名两种口径只做了代码级兼容，未拿到真实成功响应验证。
+
+### 3.109 「我的订阅」补添加订阅入口 + 三处实测纠错（26.11.02 当晚，用户追问「我如何添加订阅」）
+
+- **用户反馈**：订阅页只能看不能加。确实——§3.108 把功能范围定成「只读」，但用户要的是完整闭环。本次补入口并顺手把接口实测中发现的错误改掉。
+- **新增添加订阅入口**：
+  - 共享布局 `activity_simple_refresh.xml` 新增默认 `gone` 的 `subBar`（一个 `subToggle`，与 `manageBar` 同层，不进自动收回）。
+  - `FavoriteVideoListActivity`：`readOnly`（别人的收藏夹）+ 已登录 + 有 media_id 时点亮「订阅 / 已订阅」；状态查 `GET x/v3/fav/folder/info?media_id=` 的 `data.fav_state`（1=已订阅）；点击走 `POST x/v3/fav/folder/fav`（`media_id`+`csrf`），已订阅时二次确认后走 unfav。查询失败整条隐藏，不显示误导性状态。
+  - `CollectionInfoActivity`（视频合集详情）：自己的合集/未登录不显示；状态先读 `space/fav/season/list` 的 `info.fav_state`，读不到时回退翻「我的订阅」前 3 页找该 season；点击走 `POST x/v3/fav/season/fav`（`platform=web`+`season_id`+`csrf`）。
+  - `strings.xml` 新增 3 条 text + 4 条 msg；`SubscriptionApi` 新增 `subscribeFolder` / `subscribeSeason` / `getFolderFavState` / `getSeasonFavState` 与两个纯函数解析；`SubscriptionApiTest` 增 2 例（共 8 例）。
+- **三处实测纠错（都是拿真接口/真设备验出来的）**：
+  1. **`x/fav/season/unfav` 是 404，正确路径带 v3**：PiliPlus `Api.unfavSeason = '/x/fav/season/unfav'` 实测 HTTP 404；`/x/v3/fav/season/unfav` 返回 -101（账号未登录），`/x/v3/fav/season/fav` 同。§3.108 的实现沿用了 PiliPlus 的错误常量，本轮已改成 v3 —— **原实现下合集取消订阅必然失败**。
+  2. **收藏夹 unfav 主参数是 `media_id`（单数）**：原实现按 Web 文档先发 `media_ids` + `platform=web`，实测这几个写接口在未登录时都先报 -101 看不出差异；但 PiliPlus 的取消订阅（已在用的路径）明确发 `media_id` 且不带 `platform`。本轮把主口径改成 `media_id`（`media_ids` 只作 -400 回退），减少一次无谓失败。
+  3. **AVD 登录态其实已过期（§3.108 的结论要更正）**：`collected/list` 当时返回 `code:0` 空表，被当成「已登录、0 条订阅」；复查 `x/web-interface/nav` 用设备里的 SESSDATA 请求返回 **-101 账号未登录**，`我的` 页用户信息也显示「加载失败」——即**匿名请求 `collected/list` 会返回 `code:0` + 空列表**。所以：空态验证有效，但「登录态下 0 条订阅」的判断作废；列表渲染/点击/订阅/取消仍未在登录账号上跑过。
+- **`space/fav/season/list` 实测响应（补上 §3.108 遗留②）**：`GET ?season_id=9126374&pn=1&ps=20`（匿名即可）→ `code:0`；`data.info` 字段只有 `id/season_type/title/cover/upper/cnt_info/media_count/intro`，**没有 `fav_state`**；`data.medias[]` 每条 `id` 是 **avid**（如 `117292654397426`）、带 `bvid/duration/pubtime/upper/cnt_info`；**没有 `has_more`**，用 `info.media_count` 判到底。
+- **验证**：`:app:assembleDebug` 两 flavor BUILD SUCCESSFUL；两 flavor 单测 **125 suites / 1313 tests / 0 失败**；AVD `wear5` 重装后实测首页/「我的」/「订阅」页均正常（共享布局加条未破坏其它页面），「订阅」页空态与请求链路同 §3.108；四个写接口用本机 HTTP 实测均为 -101（存在、需登录）而非 404。
+- **遗留**：仍是登录态不足——**订阅/取消订阅的真实成功响应、以及列表有数据时的渲染与点击，仍需用户自己登录后走一遍**（复现时看 logcat `debug-订阅收藏夹` / `debug-订阅合集` / `debug-取消订阅*` 的 code/message）。
+
+### 3.110 控制台反馈 #88 / #85：用户主页长按关注加入分组 + 评论「假发送成功」（26.11.02 傍晚，用户点名）
+
+- **#88（建议）· 已实现**：用户主页头部的「已关注」按钮**长按** → `TerminalDialog.menu` 列出关注分组（自建分组 `tagid > 0`，已在的分组带「（已加入）」后缀），点未加入的分组即调用 `POST x/relation/tags/addUsers` 追加（**不是**移动，不会取关/移出原分组）；末项「新建分组」→ `TerminalDialog.input` 取名 → 创建后回查 tagid 再加入。未关注 / 未登录时长按不拦截，交回系统默认行为。
+  - `api/FollowApi.java`：新增 `getUserFollowTags(fid)`（`GET x/relation/tag/user?fid=`，解析「分组 id → 分组名」对象）、`addFollowTagUsers(tagids, fid)`（`POST x/relation/tags/addUsers`）、纯函数 `addUsersFields` / `joinTagIds`（字段名与 `moveUsers` 不同，单测钉死）。
+  - `adapter/dynamic/UserDynamicAdapter.kt`：`followBtn.setOnLongClickListener` + 四个私有方法（拉分组/弹菜单/新建后加入/加入请求）；所有网络请求都在 `CenterThreadPool` 后台线程、提示回主线程。
+  - `strings.xml` +7 条（`uitext_userdynamicadapter_022~028`），`UiText.kt` 同步登记；`FollowApiAddUsersTest` 8 例。
+- **#85（bug）· 根因与修复**：反馈原文「发不了评论，显示发出去了，但是一刷新又没了（那个视频只有我一个人评论）」。根因是 `POST /x/v2/reply/add` 会**在评论进入公开列表之前**就回 `code=0`（审核 / 列表同步延迟），旧实现把「接口成功」当成「评论区可见」，先本地插一条再报「发送成功」，一刷新就消失。
+  - `api/ReplyApi.java`：`SendReplyResult` 增加 `rpid`（取 `data.rpid`，`data.reply` 为 null 时也能用）；新增 `isReplyVisible(oid, rpid, type)`（`getRepliesLazy(mode=2)` + `seek_rpid` 定位，0 / 0.4s / 1.0s 三次；三次都查不到再兜底查一次「按时间第一页」，防 `seek_rpid` 在个别评论区不生效）与纯函数 `containsReplyId`（含楼中楼）。
+  - `activity/reply/WriteReplyActivity.kt`：一级评论 `code=0` 后先核实可见性；查不到 → 提示「评论已提交，但评论区暂时查不到（可能正在审核）」，**不插入本地列表、不 finish**（原文保留可重试/稍后刷新）；查到才走原来的「发送成功 + ReplyEvent + finish」。楼中楼回复不做核实（`seek_rpid` 对子评论不可靠），保持原行为。
+  - `strings.xml` +1 条（`uitext_writereplyactivity_022`）；`ReplyApiTest` +4 例（顶层 / 楼中楼 / 不存在 / null 与非法入参）。**额外延迟**：每条一级评论最多多 3 次列表查询（正常评论第一次即命中，多一次请求约数百毫秒）。
+- **验证**：`:app:assembleDebug` 两 flavor **BUILD SUCCESSFUL**；`:app:testStandardDebugUnitTest` / `:app:testCoexistDebugUnitTest` 各 **126 suites / 1325 tests / 0 失败 0 错误**（基线 125/1313 + 本轮 12 例）。
+- **遗留（必须说清）**：本机唯一在线设备是 AVD `wear5`，**未登录 B 站账号**，因此 ① 长按加入分组 / 新建分组 / 追加成功的真实链路、② 评论审核场景下「查不到 → 提示暂未确认」的真实表现，**都没有端到端跑过**；两条判定都靠纯函数单测 + 代码走查。真机复现时看 logcat：分组走 `post-url`（`tags/addUsers`）与返回 code；评论走 `debug-发送评论`（服务端整包）+ 新增的 `debug-评论可见性`（三次查询结果）。
+
+### 3.111 缓存页（含文件夹）新增多选批量操作（26.11.02 傍晚，用户要求）
+
+- **需求**：缓存页（顶层与文件夹内）能一次处理多条——批量删视频、批量更新弹幕、批量移动 / 移出文件夹、批量拆散文件夹；下载列表页（`DownloadListActivity`）不加多选。
+- **入口**：`res/layout/activity_simple_main_refresh.xml` 新增默认 `gone` 的 `multiSelectBar`（这个布局被推荐 / 热门 / 排行 / 收藏 / 缓存五个一级页共用，只有 `LocalListActivity` 点亮它）；非多选态只有一个「多选」，多选态变「已选 N 项 / 操作 / 退出」；一条可选条目都没有时整条隐藏，进入多选时提示「点条目勾选，再点「操作」」。
+- **勾选实现**：`CacheListAdapter` 加 `selectionMode` / `selectedVideoTitles` / `selectedFolderNames` / `onVideoToggle` / `onFolderToggle`；多选态下条目点击与长按都变成勾选（不再播放、不进文件夹、不弹单条菜单），勾中项正常亮度 + 标题前「✓ 」，未勾项 `alpha = 0.5` 压暗 + 全角空格占位（与收藏夹多选同一套视觉）。勾选集合由页面持有（`LinkedHashSet<String>`，视频按标题、文件夹按名称），刷新重扫后仍对得上；`onAttachedToRecyclerView` 里关掉 `supportsChangeAnimations`（否则取消勾选的交叉淡入会把 alpha 改回 1，收藏夹多选踩过同样的坑）。
+- **菜单四类**：全视频（顶层）删除视频 / 更新弹幕 / 添加到文件夹；全视频（文件夹内）删除视频 / 更新弹幕 / 移出文件夹；全文件夹拆散文件夹；**混选不弹菜单**，只提示「文件夹和视频不能一起操作，先取消一种」。菜单走 `TerminalDialog.menu`（标题「已选 N 项」，删除项是危险色）；一条没勾时「操作」`alpha = 0.5` 并提示「先选几条吧~」。
+- **复用单条逻辑**：`LocalListActivity` 把单条删除抽成 `deleteVideoFiles(video)`、更新弹幕抽成 `updateDanmakuFor(video)`，批量与单条共用（删除仍按「扫出这条时的根」算路径、只删真实存在的目录、**只有真删掉才摘文件夹记录**）；批量执行都在 `CenterThreadPool.run` 里跑，完成后**退出多选 → `refresh()` → 提示结果**。
+- **文案**：删除确认「确定删除选中的 N 个视频吗？此操作不可恢复。」→「已删除 N 条」/「已删除 X 条，Y 条失败」；更新弹幕「正在更新弹幕...」→「弹幕更新成功」/「弹幕更新完成：成功 X 个，失败 Y 个」；移动「已移动到「文件夹名」」、移出「已移出文件夹」；拆散确认「确定拆散选中的 N 个文件夹吗？视频会移回未分类区域。」→「文件夹已拆散」。`strings.xml` 新增 `uitext_locallistactivity_023~031`（024 / 028 / 029 / 030 / 031 带占位符），`UiText.kt` 同步登记。
+- **返回键**：多选态下返回键只退出多选、不离开缓存页；文件夹里点顶栏返回箭头同样先退多选再退回未分类区（`exitFolder()` / `enterFolder()` 里都有 `if (selectionMode) exitSelectionMode()`）。
+- **验证**：`:app:assembleDebug`（standard + coexist 两 flavor）**BUILD SUCCESSFUL**；`:app:testStandardDebugUnitTest` **全绿**；`:app:testCoexistDebugUnitTest` 有 2 例失败，都在 `com.RobinNotBad.BiliClient.util.AccountManagerTest`（`removeAccount_removesOtherAccount` 断言失败、`applyCredentials_rejectsMidCookieMismatch_andWritesNothing` 报 `Method println in android.util.Log not mocked`），该测试类与相邻会话的账号改动（未跟踪文件，见 §3.112）同批产生，与本条无关。
+- **AVD 实测**（`wear5`，Android 14 / 466×466 圆屏；coexist Debug 包由本轮源码构建，夹具为 6 个 40.0MB 缓存目录 + 2 个文件夹，逐项见 `docs/review/real-device-regression-checklist.md` §十七）：
+  - ✅ 底部条只出现在缓存页（`推荐` / `全站排行榜` 页 dump 无 `multiSelectBar`）；默认态只有一个「多选」，多选态变「已选 N 项 / 操作 / 退出」，进多选提示「点条目勾选，再点「操作」」。
+  - ✅ 勾选视觉与交互：点 / 长按均只勾选（长按不再弹单条菜单、不跳播放），勾中项标题前「✓ 」、取消变全角空格占位，计数与选中数一致；一条没勾点「操作」只在 logcat 里提示「先选几条吧~」，不弹菜单。
+  - ✅ 菜单四类：全文件夹 → 只有「拆散文件夹」；顶层全视频 → 删除视频 / 更新弹幕 / 添加到文件夹；文件夹内全视频 → 删除视频 / 更新弹幕 / 移出文件夹；**混选只提示「文件夹和视频不能一起操作，先取消一种」且不弹菜单**。
+  - ✅ 批量删除：确认框文案「确定删除选中的 2 个视频吗？此操作不可恢复。」→ 确认后提示「已删除 2 条」，磁盘上两个缓存目录**确实消失**，自动退出多选并刷新。
+  - ✅ 批量移动：列表标题「移动到文件夹」、条目带各自视频数 → 选中后提示「已移动到「合集一」」，`.folders_info.json` 真的把两个标题加进了该文件夹。
+  - ✅ 移出文件夹：提示「已移出文件夹」，json 里对应标题被移除。
+  - ✅ 批量拆散：确认框文案「确定拆散选中的 2 个文件夹吗？视频会移回未分类区域。」→ 提示「文件夹已拆散」，`.folders_info.json` 变空数组，原来夹内的视频回到未分类区。
+  - ✅ 批量更新弹幕：流程走通——先提示「正在更新弹幕...」，全部跑完提示「弹幕更新完成：成功 0 个，失败 2 个」（该 AVD 未登录 B 站账号，接口必然失败，属预期），随后自动退出多选、列表刷新、App 不崩。
+  - ✅ 退出多选后行为恢复：长按视频重新弹单条菜单（更新弹幕 / 切换分辨率 / 添加到文件夹 …），点击视频进入 `PlayerActivity` 播放。
+  - ⚠️ **返回键未能在该 AVD 验证（BLOCKED，非本次回归）**：多选态按 BACK 会直接回表盘；对照测试发现**本次之前就有的**「文件夹内按 BACK 退出文件夹」在该 AVD 上一样失效，说明是模拟器把 BACK 当窗口层 dismiss（`values/themes.xml` 各主题的 `android:windowSwipeToDismiss`，`activity/base/BaseActivity.kt` 注释也点明「窗口层直接 finish，不走 onBackPressed」），不是本次代码问题；多选态的 BACK 分支与收藏夹多选同款，待手机 / 真机复验。
+  - ⚠️ 圆屏适配（结构判读）：底部条 `[23,344][443,440]`，466 圆屏在条中心高度处可见宽度约 x∈[63,403]，「退出」文字（中心 x≈381、宽约 26px）落在圆内不被切；按钮右侧超出圆外的部分只裁到背景，而背景取 `?android:attr/colorBackground` 与页面同底色，**视觉无割裂**。
+
+### 3.112 账号切换 / 特殊登录的凭证隔离与多账号导入导出（26.11.02 夜，用户要求）
+
+- **需求**（用户原话方向）：① 账号切换导致凭证混乱；② 特殊登录凭据的账号隔离混乱；③ 特殊登录支持一键导入 / 导出多个登录者信息且不串号。
+- **根因**：① 切号只重写 SP 与 Cookie，不区分「登录态版本」，切号前发出的请求返回时其 `Set-Cookie` 仍被合并进新账号（污染 csrf 快照 / 覆盖 SESSDATA），且按账号的缓存（大会员状态 / 未读红点 / 追番快照）从不清理；② 特殊登录导入缺 `access_key` 时沿用上一个账号的 `access_key`，`mid` 与 Cookie 里的 `DedeUserID` 也不校验；③ 导出只有「当前账号单条平铺 JSON」，多个账号只能一个个导。
+- **代际隔离**（`util/NetWorkUtil.java`）：新增 `private static volatile long accountGeneration`；4 个请求构造点统一走 `newTaggedRequestBuilder()`，给 `Request` 打 `tag(Long.class, accountGeneration)`；`saveCookiesFromResponse()` 在 `synchronized (NetWorkUtil.class)` 内用 `isStaleGeneration(requestGeneration, accountGeneration)` 判断，旧代际的 `Set-Cookie` 直接丢弃并 `Logu.d("saveCookiesFromResponse", "丢弃旧账号代际的 Set-Cookie：req=… cur=…")`；新增 `getAccountGeneration()` / `bumpAccountGeneration()` / `applyAccountCookies(cookies)`（锁内 `generation++` + 写 SP / cache / headers）。写登录态一律走 `applyAccountCookies`，不再直接 `setCookiesString()`。
+- **统一凭据入口**（`util/AccountManager.java`）：新增 `applyCredentials(mid, name, cookies, refreshToken, accessKey, avatar[, csrfHint])`：校验 `mid>0`、cookies 非空、`DedeUserID` 必须等于 `mid`（否则 `Logu.w` 拒绝且不写任何东西）；csrf 取实时 `bili_jct`、回退 `csrfHint`、否则空串；一次 `SharedPreferencesUtil.edit` 写完 `mid / cookies / refresh_token / access_key / csrf / current_account_mid / cookie_refresh / setup`（**缺 `access_key` 会清空旧值**）；随后 `NetWorkUtil.applyAccountCookies()`、更新账号快照列表、清按账号缓存。`switchToAccount()` 改为转调它；新增 `clearCurrentLogin()`（清 5 项凭证 + 代际 +1 + 清缓存 + 通知 `CookieRefreshScheduler`），`removeAccount()` 改为**当前账号拒绝删除**（否则启动同步会把它加回来）。`saveCurrentAccount()` 用「起始 mid + 起始代际」双守卫：网络回来后若 SP 已换号或代际变了，整笔丢弃，不再把旧账号信息写进新账号的列表。
+- **按账号缓存**：`AccountStateStore.onAccountChanged()`（清大会员状态缓存）、`CookieRefreshScheduler.onAccountChanged()`（重置上次尝试与退避、清 `-101` 标记）；`AccountManager` 同时 `removeValue` 掉 `DYNAMIC_UPDATE_NUM` / `MESSAGE_UPDATE_NUM` / `BANGUMI_UPDATE_SNAPSHOT`。
+- **多账号导入导出**（`util/SpecialLoginParser.kt` + `activity/settings/login/SpecialLoginActivity.kt`）：导出改为 `AccountManager.exportAllAccounts()`，信封 `{"format":"rebili.accounts","version":1,"exported_at":…,"accounts":[…]}`，当前账号用 SP 实时凭证覆盖快照（也可单条复制）；`parseAny()` 同时接受「单条对象 / 裸数组 / 带 `accounts` 的信封」；导入单条 = 完整登录（`applyCredentials` → 跳启动页），导入多条 = 只写账号列表（`AccountManager.importAccounts()`，**不切当前账号**），toast「已导入 N 个账号（新增 X，更新 Y）」。校验：每条的 cookies 必须含 `DedeUserID` 且有 `refresh_token`；自带 `mid` 与 `DedeUserID` 必须一致；重复 mid 保留最后一条；**一条坏数据整批拒绝**（提示第几个账号有问题）。「粘贴并登录」走同一套解析，因此也支持多账号。
+- **登录 / 退出路径收口**：`QRLoginFragment`（TV 扫码 + Web 扫码）、`PasswordLoginFragment`、`SMSLoginFragment` 全部改为 `applyCredentials(...)` + `saveCurrentAccount()`，TV 扫码的 Cookie 从空串开始拼（避免带上一个账号的 SESSDATA）；`SplashActivity.resetLogin()` 与 `MySpaceActivity.handleLogout()` 改为 `AccountManager.clearCurrentLogin()`（**顺带清掉原来漏清的 `access_key`**，并升代际防止在飞请求把 Cookie 写回来）。
+- **入口**：账号切换页底部新增「导入账号数据（支持一次性导入多个账号）」，长按删除对当前账号改为提示「当前登录的账号不能删除，请先切换到其他账号」。
+- **验证**：`:app:assembleDebug` BUILD SUCCESSFUL；`:app:testStandardDebugUnitTest` / `:app:testCoexistDebugUnitTest` 各 **127 suites / 1357 tests / 0 失败**（新增 `AccountManagerTest` 22 例 + `SpecialLoginParserTest` 10 例批量解析）。模拟器（AVD `wear5`，466×466）实测：账号切换页入口与文案 ✓、长按当前账号被拒 toast ✓、导出页内容含 `format: rebili.accounts` 与当前账号实时凭证 ✓、导入页可进入且能敲入多账号 JSON ✓。
+- **遗留（必须说清）**：批量导入的「点登录 → toast 计数 → 账号列表多出条目」最后一步 **未在模拟器上跑通**——实测期间另一个并行会话持续抢占同一台 AVD（反复拉起 `com.RobinNotBad.BiliClient.coexist`），最后模拟器掉线；该逻辑由 `AccountManagerTest.importAccounts_*` 与 `SpecialLoginParserTest.parseAny_*` 覆盖，真机复测时重点看 toast 计数与账号列表条数。
+- **并发注意**：本轮改动与相邻会话的缓存页多选（§3.111）在同一工作区并行，本条只提交本功能涉及的文件。
+
+### 3.113 圆屏适配补两块：长按二级菜单弹窗、两个伪装页（26.11.02，用户点名）
+
+- **缘起**：用户报「部分长按产生的二级菜单（例如长按缓存的视频）没有圆屏适配而显示不全；伪装界面未做圆屏适配」。
+- **定位①（长按二级菜单）**：长按缓存里的视频 / 文件夹弹的是 `TerminalDialog.menu`（`activity/video/local/LocalListActivity.kt:291` 与 `:311`），它落在**独立的 Dialog 窗口**里；§3.93 的实验效果「圆屏列表」只对本 Activity 的 `decorView` 生效，管不到 Dialog 窗口，所以圆屏上这些菜单的左右两端会被表盘切掉。全工程没有一处 `PopupWindow`（已全仓 grep），二级菜单不是 Dialog 就是 Activity，这一条覆盖 Dialog 那一类。
+- **改法①**：`util/view/DialogSizing.kt` 增加「按表盘内接矩形收窄」——`ROUND_FIT_MARGIN = 0.97`，可用直径 `d = min(屏宽, 屏高) × 0.97`；弹窗宽仍取可用宽的 90%，但**再夹到内接正方形**（`d / √2`），高度预算按 `√(d² − w²)` 给（宽高平方和 ≤ `d²` 才在圆内），高度不够时内容区滚动，长列表不再把弹窗撑出屏幕。生效判据只看 `SettingsKeys.UI_ROUND`（「圆屏适配」），与「圆屏列表」实验开关解耦。
+- **定位②（伪装页）**：`BluetoothDisguiseActivity` / `CalculatorDisguiseActivity` 是 `AppCompatActivity`，不在 `BaseActivity` 体系里，页边距那套（`paddingH_percent` / `paddingV_percent` + 圆屏额外下边距）自然没落到它们身上。
+- **改法②**：把页边距算法抽成纯函数 `util/view/RoundInsets.compute(屏宽, 屏高, padH%, padV%, round)` + `util/view/ScreenMetrics`（取真实屏幕像素），`BaseActivity` 与两个伪装页共用同一份结论；伪装页把 inset 加到自己的根布局 padding 上。**顺带修掉一处老错**：旧 `DisguiseRoundPadding` 把百分比直接当 dp 用，466px 的圆屏上算出的是 5dp 而不是 5%。
+- **验证**：`:app:assembleDebug` 双 flavor 通过；两 flavor 单测各 **109 suites / 1133 tests / 0 失败**（新增 `DialogSizingTest` 19 例、`RoundInsetsTest` 5 例，钉住真实几何：380×380 屏 + 5%/3% 时老算法给出的 `307×336` 试算 `207145 > 144400` 必须被拒，收窄到内接正方形后通过）。
+- **未验**：模拟器不可达（MuMu `127.0.0.1:7555` 与 `16384/5555/21503/62001` 全部拒连、`adb devices` 为空），圆屏上的实际观感（弹窗不再被表盘切、伪装页边距与正常页一致）没能在设备上复核，结论基于纯函数单测 + 代码路径核对。
+
+### 3.114 「虚拟合集」点哪一条都从第一条开始播（26.11.02，用户点名）
+
+- **缘起**：用户报「播放虚拟合集的视频时，无论选的哪一个实际上播放的都是第一个」。
+- **根因（两处，都在起播下标的推算上）**：
+  - **本地缓存页**：`LocalListActivity.playVirtualCollection` 原循环对文件夹内**每一个**视频都往 `pagenames` 塞一项，但只有 `videoFileList != null` 时才往 `videoUrlList` 塞——两个列表从第一个不可播条目起就错位；起播下标又是用 `v == videoList[startVideoIdx]` 的**对象同一性**在过滤后的列表里找，错位后自然指回第 0 项。
+  - **收藏夹**：`FavoriteVideoListActivity.playFavoriteVirtualCollection` 只用 `v.aid == startAid` 反查下标，长按/点击传进来的 `startPosition` 被完全丢掉；`aid` 为 0 或重复时下标恒为 0。
+- **改法**：新增纯函数 `util/VirtualCollectionStart`（`resolveOnline(startPosition, startAid, aids)`：点击位置优先，位置与 aid 不矛盾就用位置，只有位置不合法才退回按 aid 查；`resolveLocal(clickedInFullList, collectionFullIndices)`：按下标映射表换算）。两个页面都改成**一趟循环**同时建齐 4 个列表 + 一份「全集下标 ↔ 合集下标」映射表，不可播条目整条跳过（不再产生空 pagename 与错位）；换算不出起播项时明确提示（新增 `uitext_locallistactivity_034` / `uitext_favoritevideolistactivity_025`）并返回，**不再默默播第一条**。
+- **验证**：`:app:testStandardDebugUnitTest --tests "com.RobinNotBad.BiliClient.util.*"` `BUILD SUCCESSFUL`（`VirtualCollectionStartTest` 8 例：位置优先、位置与 aid 矛盾、aid 为 0、aid 重复、位置越界、本地映射缺项）；`:app:assembleDebug` 双 flavor、`:app:assembleRelease` 全通过。
+- **未验**：用户的实际触发路径没能复现，改为逐条核对三条入口的代码路径（缓存文件夹连播 / 收藏夹点击即播 / 播放页选集切换），模拟器不可达。播放页内部换页链路（`switchToOnlinePage` 用 `cids[pageIndex]` 取流、`doSwitchPage` 落地 URL 与标题）本轮复核后确认本来就是对的，未改。
+
+### 3.115 菜单「退出」改成可排序、可关闭（26.11.02，用户要求）
+
+- **缘起**：用户要求「菜单退出按钮可调顺序与启用」。26.10.31 加的退出按钮是硬编码在菜单最下方的一枚 `MaterialButton`（§3.91），不受「菜单设置」管控。
+- **改法**：`util/MenuConfig.kt` 新增动作项 key `EXIT = "exit"`，进 `ALL_ITEMS`（于是能排序、能关掉、默认启用且压在列表最后），但**不进 `FIXED_ITEMS`**、**不作启动页候选**（选了它开机就收摊：`resolveStart` 既不沿用也不兜底到它、`loadStart` 读到旧值改回默认、菜单设置里点它只弹提示 `msg_menu_exit_not_start`）。`MenuActivity` 删掉硬编码按钮，改在菜单列表循环里渲染：文案取 `R.string.btn_exit`，点击直接 `exitAppCompletely()`（不走 `killAndJump`，它要往页面栈里跳）。
+- **老数据迁移（关键）**：`menu_enabled` 里没有 `exit` 有两种含义——「升级前的老数据」与「用户自己把它关掉了」。用新键 `menu_exit_state`（`SharedPreferencesUtil.MENU_EXIT_STATE`，保存菜单配置时写 `"1"`/`"0"`）区分：缺项且没写过 → 补在末尾（默认启用）；缺项且写过 → 保持隐藏，不再偷偷加回来。`architecture-map.md` §3.1 记过「新增菜单 key 老用户不会自动出现」，这是第一个带迁移的新 key。
+- **验证**：`MenuConfigTest` 34 例（新增「老数据缺 exit 会补上并写回」「用户关掉后不再加回」「保存时写标记」「exit 不能当启动页、旧启动页值会被改回」）；两 flavor 单测各 **109 suites / 1133 tests / 0 失败**；`:app:assembleDebug` 与 `:app:assembleRelease`（standard / coexist 各 4 个 ABI 包，6.2~12.3MB）均 `BUILD SUCCESSFUL`。
+- **未验**：模拟器不可达，菜单页面上的拖动排序 / 关掉退出项、以及升级路径（旧 `menu_enabled` 不含 exit）没能在设备上走一遍，靠单测 + 代码路径核对。
+
+### 3.116 远程合并冲突没解干净：资源重名 + `BaseActivity` 残留旧边距算术（26.11.05，用户报构建失败）
+
+- **现场**：用户把远程 `main`（26.11.02 那一批：缓存页排序/搜索、缓存页多选批量、账号代际隔离、订阅、播放器三项…）合并进来后 `assembleDebug` 直接失败。
+- **残留①（资源重名）**：`:app:mergeCoexistDebugResources` 报 `Found item String/uitext_locallistactivity_023 more than one time`——两边各自都从 `_023` 往后加：远程加的是多选批量（`_023` 操作 / `_024` 已选 %1$d 项 / `_025` 退出 / `_026` 点条目勾选，再点「操作」，`_027`~`_031`），我加的是虚拟合集（进入合集提示 / 该文件夹内没有可播放的视频 / 无法定位起始视频 / 合集页名）。两边 `standard` 与 `coexist` 都合并同一份 `strings.xml`，重名两个 flavor 一起挂。修法是**挪我这四条**到下一个空位 `_032`~`_035`（远程那几条的语义已被新合并进来的代码引用，不该动它们），同步改 `LocalListActivity` 四处引用。
+- **残留②（编译不过）**：`:app:compileCoexistDebugKotlin` 报 `BaseActivity.kt:167` 起 `Unresolved reference 'paddingH_percent'` / `Overload resolution ambiguity`。原因是两边改了同一段：远程把「界面边距」从 `DecorView` 根挪到内容容器（新增 `userPaddingH/T/B` 字段 + `applyUserPadding()` + `onContentChanged` 里重施，图的是触摸与系统栏 inset 互不覆盖），而我这一侧已把那整段百分比算术换成 `RoundInsets.compute(...)`、顺手删掉了 `paddingH_percent` / `paddingV_percent` 两个局部量；解冲突时把两边都留下了，于是既在算已经不存在的局部量、窗口尺寸算了两遍、还同时往 `DecorView` 与内容容器加边距。
+- **改法**：这段只留一份结论——`RoundInsets.compute(屏宽, 屏高, padH%, padV%, 圆屏)` 算出 `insets` → `window_width/height` 取它，`userPaddingH/T/B` 取它，交给远程的 `applyUserPadding()` 加到内容容器上；删掉 `DecorView` 那次 `setPadding` 与整段旧算术。两边的意图（统一算法 / 边距不进 DecorView）都保住。
+- **顺带（文档）**：`fix-progress.md` 合并后我这三条与远程的 §3.101~§3.103 撞号，而远程那几个号已被 `docs/review/real-device-regression-checklist.md` §435 引用，所以把本侧三条挪到 §3.113~§3.115 并改掉 §1 里的交叉引用；`docs/FEATURES.md` 与 `docs/architecture-map.md` 的合并结果与两侧各自 diff 逐文件比对完全一致，无需处理。
+- **验证**：`:app:assembleDebug`（standard + coexist）`BUILD SUCCESSFUL`；`:app:testStandardDebugUnitTest` / `:app:testCoexistDebugUnitTest` / `:app:assembleRelease` 结果见 §1 的单测计数。
+- **未验**：模拟器不可达（MuMu `127.0.0.1:7555` 拒连），圆屏上「边距加在内容容器」的实际观感（远程改法）没能在设备上复核。
+
+### 3.117 搜索设置里「视频搜索（始终启用）」显示成「锁定关」（26.11.05，用户点名）
+
+- **现场**：用户报这一项开关看着是「锁定的关」，像视频搜索被关掉了。
+- **根因**：`activity_setting_search.xml` 里这一项只写了 `android:enabled="false"` + `android:clickable="false"`，**没有 `android:checked`**，代码侧也从不读它——`SearchActivity` 的类别表里 `"video"` 恒为 `true`，压根没有对应它的设置项，所以它一直显示「关」。它是「始终启用」的展示项，本该锁成开。
+- **改法**：布局加 `android:checked="true"`（保留 `enabled=false`，仍然点不动），并在 `SettingSearchActivity` 膨胀完成后再兜一次 `isChecked = true`（防个别 AppCompat 版本忽略 xml 的 `android:checked`）。行为没有任何变化，只是显示对了。
+- **验证**：`:app:assembleDebug` 通过；纯布局 + 一行赋值，没有逻辑分支可测。
+- **未验**：模拟器不可达，实际观感（锁定开）没能在设备上看。
+
+### 3.118 关于页开发者列表新增 Kuinone（26.11.05，用户要求）
+
+- **内容**：`AboutActivity.DEVELOPERS_RE` 追加一项——名字 `Kuinone`、签名 `Kuinone可能是迄今为止唯一一个符合RESTful API规范的苯醌`、UID `475731079`；头像由用户提供的 `misc/kuinone.jpg`（512×511）方裁成 256×256、转成 `res/mipmap-nodpi/avatar_kuinone.webp`（WebP q88，18KB），与其余 8 张头像同目录同格式。点击卡片照旧跳该 UID 的用户页（走 `BiliTerminal.jumpToUser`）。
+- **放在哪一列**：本仓库是 RE 版，所以放进「RE：哔哩终端主要开发者」（`about_dev_trae`）那一列；要改挂到「主要开发者 / 联合开发者」，改一行列表即可。
+- **验证**：`:app:assembleDebug` 通过（新资源 `R.mipmap.avatar_kuinone` 能解析）。
+- **未验**：模拟器不可达，卡片实际渲染（头像圆裁、长签名的跑马灯）没能在设备上看。
+- **现象**（用户原话方向）：「点这一集，界面却写着下一集」。
+- **公开侧根因**：`OptionalFeatures.interceptBangumiPlay()` 只把 `episodeIndex`（`BangumiInfoFragment.selectedEpisode`，即该 section 列表里的**位置**）交给可选功能实现，而位置 != 集号——两边列表只要有一边多夹了 PV/预告/第 0 话，界面标题就整体偏移一位。
+- **公开侧改动**：门面增加第 5 个参数 `episodeLabel`，`BangumiInfoFragment.startPlay()` 传 `episode.title`（`BangumiApi.analyzeEpisode` 已把 B 站 `title` 映射到 `episode.title`，形如「第5话」）；反射取方法时同步加 `String::class.java`。KDoc 写明「只看下标会串集」。私有实现侧同步接收该参数（本仓库只有门面与挂点）。
+- **验证**：`:app:assembleDebug` BUILD SUCCESSFUL；`:app:testCoexistDebugUnitTest --tests "com.RobinNotBad.BiliClient.feature.*"` 全绿（含 `FeatureHolderContractTest` 对新签名的断言）。模拟器 e2e：`third_party_episode_label=第3话` 时日志出现「集名=第3话」，界面标题不再是下标推算值。
+- **已知遗留**：标题匹配仍按「双向包含」，同系列不同季可能互相命中（改名侧下一步加季数/年份约束）。
+
+- **需求**（用户原话）：「算了，咱们也和 kazumi 一样的逻辑算了，不搞静默换源了」（Kazumi 式选源；实测同机同网时，静默换源链路从点击到首帧约 9.2s，而 Kazumi 点选集到起播约 7.1s，且用户看不到在等什么）。
+- **公开侧改动**：`BangumiInfoFragment` 删掉详情页加载完成时的 `OptionalFeatures.warmUpBangumiSource(...)` 预热调用（面板化后预热没有意义，反而会和用户实际操作抢线程）；`startPlay()` 的注释改为「会员集会打开播放来源面板」。门面 `interceptBangumiPlay` / `warmUpBangumiSource` 签名不变（私有实现侧改行为）。
+- **私有侧改动**（不在本仓库）：`ThirdPartySourceActivity` 重写成「播放来源」面板——13 个源并发检索、逐源显示 `N 个结果 / 无结果 / 检索失败`、可展开选条目、再选剧集；`interceptBangumiPlay` 只负责打开面板；删除「先起播放页再背后解析」的 `playPendingInPlayer`，剧集页改为在透明中转页解析出地址后才起播放器。
+- **验证**：`:app:assembleDebug` BUILD SUCCESSFUL；模拟器（Android 37）点面板 → DM84 → 剧集 1…12 → 第 1 集 → 嗅探命中 m3u8 → 播放器 1920×1080 起播，全程没有「静默跳播放页」。
+- **已知遗留**：面板首屏会有 2~3 个慢源长时间停在「检索中…」（总预算不设上限，保证用户能看到全部结果）；「主关键词 + 别名」两轮搜索仍是串行。
+
+### 3.119 番剧搜索「先出 B 站结果、再补 BGM 卡片」，不再整页等补充数据（26.11.05，用户要求）
+
+- **现象**：番剧分类搜索要 8–10s 才整页出现（同机 Kazumi 只需 0.9s）；期间刷新圈一直转，用户以为卡死。
+- **根因**：`SearchBangumiFragment.continueLoading()` 把 B 站 wbi 搜索（约 1.2s）与 `OptionalFeatures.appendBangumiSearchExtras()`（BGM 反代搜索 + 最多 8 次详情补集数，串行多反代，最坏十几秒）串在同一个后台任务里，两者跑完才 `runOnUiThread` 贴列表。
+- **公开侧改动**：B 站结果先 `appendToAdapter(page, list)` 上屏并立即 `setRefreshing(false)`；再把结果副本交给补充数据源，返回后只追加新增卡片（新增 `appendToAdapter(page, items)` 供两段共用）。失败仍走 `loadFail` 兜底。
+- **私有侧改动**（不在本仓库）：`BgmApi` 给三个反代加 5 分钟失败短路表，挂掉的反代不再每条请求各等 6s。
+- **实测**（MuMu，Android 37）：切到「搜索-番剧」2s 时 4 张 B 站卡片已在屏上、刷新圈已停；BGM 独有卡片（「约会大作战F Last Date」）约 5s 时追加在末尾。
+- **遗留**：`api.kazumi.fyi` 的 `/v0/search/subjects` 需要签名（未签名 401，签名钥匙由 Kazumi 构建期注入），因此 BGM 搜索仍以 `fxbgm.tv` 打头；补充数据本身仍是串行反代，可再并行化。
+
+### 3.120 自动跳过片头片尾把「视频分段」当片尾一直跳（26.11.05，控制台反馈 #99 / #34）
+
+- **反馈**：#99（26.11.02，OPPO OWW212，SDK 30）「开启『自动跳过片头片尾』时观看 BV1U74w6XEbB 会一直在跳过片尾」；#34（26.10.24）「跳过片头片尾会因为视频分段也跳过」。两条同根，用户要求「解决这一类问题」而不是单条。
+- **根因**：`x/player/wbi/v2` 的 `data.view_points[].type` **是分段类型，不是片头片尾类型**。番剧/影视 EP 数据的 `type == 1/2` 才带片头片尾语义；UGC 稿件的 `view_points` 是 up 主或平台自动生成的**视频分段（章节）**。实测 `BV1U74w6XEbB`（aid=117546476966330 / cid=43264904750，单P 129s）解开是 10 段普通章节，**`type` 全部为 `2`** → 旧实现 `TYPE_ED = 2` 把它们全当片尾 → 250ms 进度定时器每轮都命中 → 「一直在跳过片尾」。接口侧结论记在 `docs/bilibili-api-notes.md` §12，架构侧记在 `docs/architecture-map.md` §7.7。
+- **修法（一道闸）**：自动跳过**只对 PGC 生效**。
+  - `api/PlayerApi.buildTerminalPlayerIntent` 给播放器 Intent 补 `is_bangumi`（取自 `PlayerData.isBangumi()`），所有入口自动带上；
+  - `PlayerActivity` 读成 `pgcPlaybackFlag`（`is_bangumi || epid > 0`，**不看 seasonId**，两者都没有按 UGC 处理），`isPgcPlayback()` 供 `loadViewPoints()` 调 `ViewPointSkip.buildSegments(raw, allowAutoSkip)`：UGC 直接空表，自动跳过彻底不参与；
+  - 「显示视频分段」按钮、分段选择卡片、手动跳章节**一行未动**，UGC 用户照旧可用；
+  - 引导 `maybeShowSkipGuide()` 也只在 PGC 里弹，UGC 不再被劝「开启」。
+- **为什么不用 `content` 白名单当闸**（曾试过，已否决）：番剧片段的 `content` 常为空串或「1-1」「正片」「简介」，按标题过滤会把真片头挡掉，用户反而觉得「开了没用」；也挡不住「预告」类标注。`ViewPointSkip.isOpEdLabel()` 只保留作**诊断**，不参与过滤；单参 `buildSegments(raw)` 回到旧口径（只看 type + 区间 + 时长上限）。
+- **测试**：新增 `app/src/test/java/com/RobinNotBad/BiliClient/player/ViewPointSkipChapterTest.kt`（18 条，含 #99 十段样本逐段断言、`allowAutoSkip=false` 必为空表、`segmentAt(7.0)` 命中「泄漏源」复现旧现象、0~129s 按 250ms 逐点全 null、真片头片尾 15/95 与 1380/1440 仍保留、`isOpEdLabel` 诊断语义）；`ViewPointSkipTest.kt` 原有 12 条未改、另加 4 条。`:app:testStandardDebugUnitTest` 全绿（142 suites / 1501 tests / 0 失败 0 错误 0 跳过）。
+- **已验证**：`./gradlew.bat :app:assembleDebug --rerun-tasks` BUILD SUCCESSFUL（1m2s）；单测全绿；接口层已用 curl 实拉两条接口确认 `type` 语义；MuMu（Android 12 / x86_64）安装 `app-standard-x86-debug.apk` 成功。
+- **未验证（推测）**：`isPgcPlayback()` 是 `PlayerActivity` 私有方法，纯 JVM 测不到，**端到端「UGC 不再自动跳片尾 / 番剧仍跳」需要在有登录态的机器上跑一遍**（本机模拟器无登录态）。
+- **遗留**：①`pgcPlaybackFlag` 只在 `onCreate` 写一次，同一个 Activity 会话里跨到另一条视频（合集 / 收藏夹混排）会继承入场时的判定——播放器目前每次都重新起 Activity，暂不触发，但若将来做「不重启 Activity 换视频」必须一并改成按 aid/epid 重算；②要把 `isPgcPlayback()` 纳入纯 JVM 单测，需把判据抽到 `player/` 下成纯函数（比如 `PlayerPlaybackKind.fromExtras(...)`），本轮没做。
+
+### 3.121 设置页搜索框取消固定 + 缓存合集按合集顺序排列（26.11.06，控制台反馈 #97 / #98）
+
+- **反馈与拍板**：#97（26.10.27，HUAWEI HWMDS）「设置里的搜索框调小一点 / 专门出一个设置」——维护者拍板**「取消固定即可」**，不做折叠交互。#98（26.11.02，OPPO OWW211）「缓存一整个合集后顺序混乱、找不到 1~10 集」——维护者补充：**反馈本意是排序**，不是「合集页点缓存不能直接播」。
+- **#97 改法**：`res/layout/activity_setting_main.xml` 把 `@id/search_input` 从「顶栏之下、scrollView 之外」挪进 `RotaryScrollView` 内容的 `LinearLayout`。搜索框跟着设置项一起滚动（取消固定）；`SettingMainActivity.filter()` 只重建 `settings_container`，输入框与焦点不受影响，无新增文案。
+- **#98 改法**：
+  - 新增 `util/PageOrderStore.kt`：合集父目录下 `.page_order.json` 记录服务端下发的 `pagenames`（先过 `FileUtil.stringToFile`，与真实落盘目录名一致）；纯函数 `parse` / `serialize` / `orderedPages`，排序口径复用 `LocalListSort.mergeOrder`（记录里的页优先、扫描到但没记录的按原序补尾、去重、记录里已删的忽略），写文件失败不影响下载本身。
+  - `api/PlayerApi.java` 的 `startDownloading` / `startDownloadingAudioOnly` 在多P分支入队前（`CenterThreadPool`）调 `PageOrderStore.remember(title, pagenames)`。
+  - `activity/video/local/LocalListActivity.kt` 的 `scanVideos` 扫描合集子目录时按记录排序；**老缓存没有该文件时原样返回扫描顺序**，行为与改动前一致。
+- **验证**：`./gradlew.bat :app:assembleDebug :app:testStandardDebugUnitTest -x lint` BUILD SUCCESSFUL；`testStandardDebugUnitTest` **143 suites / 1512 tests / 0 失败 0 错误**（新增 `PageOrderStoreTest` 11 例：JSON 往返、坏数据兜底、记录优先与补尾、已删页忽略、去重、不丢不重）。**设备未验**：本机唯一可用的 AVD 是 Play Store 镜像（android-37.0），任务栈被历史任务反复抢占（刚打开设置页就被别的 Activity 顶掉，首次启动教程 / 夜间提醒连环弹），没拿到稳定的滚动与缓存页截图。真手表复验两步：① 设置页往下滚，搜索框应随内容滚出屏幕；② 缓存一个多P合集后进缓存页，合集内页序应与 UP 主顺序一致。
+- **遗留**：旧缓存（这版之前下载的）没有 `.page_order.json`，不会自动补写顺序——需要重新缓存才会生成记录；要给老缓存补顺序得再加「按 meta 里的 aid/cid 反查 pagenames 重建」的逻辑，本轮没做。
+- **控制台状态（本轮）**：按维护者拍板把 **#11**（确认「加了」指 #53 内置选图页）、**#48**（证书信任修复，标已处理关闭）、**#82**（维护者确认 26.11.02 之后已正常）、**#89**（对应 `1a1536e` 账号代际隔离）、**#100**（26.11.02 已实现多P续播）标为已处理；#44 顺便核对私有仓库 `feature/DanmuMessage.kt` 已实现「弹幕被点赞 / 被回复」的填充与点击，公开侧仅 `OptionalFeatures` 门面，此前结论成立。
+
+### 3.122 「从 26.11.02 升级到当前版本会掉登录」溯源与凭证链返工（26.11.06，用户点名）
+
+- **结论先放前面（已验证）**：**升级本身不清登录态**。取证口径四条，都能复跑：
+  1. 打包面没问题：26.11.02 / 26.11.06 / 26.11.06.1 三个正式包的签名证书 SHA-256 完全一致（`991386eb27546d51487c7d2e20b6f5cbf6eec9c1cbb135c05f19c5b8854fc9ed`）、包名都是 `com.RobinNotBad.BiliClient`、versionCode `2611020 → 2611060 → 2611061` 单调递增 → 覆盖安装合法。排除了「换签名必须卸载」「误发成共存版」这两类会造成掉登录的打包事故（用 `apksigner verify --print-certs` + `aapt dump badging` 对线上 Release 资产实测）。
+  2. `git diff 26.11.02..HEAD` 里启动/刷新链路逐字节相同：`SplashActivity.checkCookieRefresh()` / `CookieRefreshApi` / `AppTokenRefreshApi` / `CookiesApi` / `Cookies` / `LoginApi` / `CookieRefreshPolicy` 一个字符都没改。
+  3. 全库能写空登录态的只有两个入口：`SplashActivity.resetLogin()`（仅当服务端明确 `-101`，或本地 Cookie 里**没有** SESSDATA 时）与 `MySpaceActivity` 的「退出登录」（要连点两次确认）。升级首启两条都不走。
+  4. 账号代际隔离（`1a1536e`）在首启不会误判：`accountGeneration` 初值 0，只有登录 / 切号 / 退出才会自增；首启请求代际 = 当前代际，`saveCookiesFromResponse()` 的丢弃分支进不去。
+- **真正的掉登录机制（代码事实，两版同源，本轮修掉）**：`NetWorkUtil.saveCookiesLocked()` 合并 `Set-Cookie` 时有三个缺陷，任一都会让本地**看起来**掉登录：
+  1. **凭据按空值覆盖**：收到一条 `SESSDATA=`（`Max-Age=0` / `Expires` 过期 / 服务端清 Cookie）就把本地 SESSDATA 写成空串。`SplashActivity.hasLocalSession()` 的判据正是「Cookie 里有非空 SESSDATA」，于是下一次冷启动直接走「登录信息过期」→ 清整套凭证。
+  2. **属性截断只认 `"; "`**：`Set-Cookie: SESSDATA=x;Path=/;Domain=…`（分号后不带空格，RFC 允许）会把属性整段当成值存下来，之后按 `;` 重解析错位。
+  3. **SharedPreferences 未就绪时照写**：此时 `getCachedCookies()` 返回空串，从空串合并出来的串只剩本次响应那几个键，SESSDATA / DedeUserID 直接消失。
+  另外 `CookieRefreshApi.refreshCookie()` 的顺序与官方流程（`bilibili-API/docs/login/cookie_refresh.md`）相反：新 `refresh_token` 是**一次性轮换**口令，旧实现要等 `confirm/refresh` 成功才落盘（中途任何异常 = 永远续不上会话）；而且是**先 confirm 让旧 Cookie 失效、后校验新 Cookie**，一旦新 Cookie 没落全就是「旧会话被作废 + 本地还是旧的」= 必掉登录。
+- **改法**（小步、可单测）：
+  1. 新增纯策略 `util/CookieJarPolicy.kt`（`parse` / `parseAll` / `merge` / `parseCookieString`）：`CREDENTIAL_KEYS`（SESSDATA / bili_jct / DedeUserID / DedeUserID__ckMd5 / sid）**任何响应都不得删除或清空**（记 `MergeResult.protectedKeys`，仅用于日志）；非凭据键按 `Max-Age=0` / `Expires` 正常删除；空值写入忽略；输出 `"; "` 连接且无尾随分隔符。
+  2. `NetWorkUtil.saveCookiesLocked()` 改调该策略；`sharedPreferences == null` 时**丢弃本次 Set-Cookie**；`putCookie()` 同样加就绪检查。
+  3. `CookieRefreshPolicy` 新增纯函数 `checkRefreshedCredentials(...)` → `READY / NO_REFRESH_TOKEN / NO_SESSION_COOKIE / MID_MISMATCH`。
+  4. `CookieRefreshApi.refreshCookie()` 返回 `RefreshResult{OK, RETRY, NEED_LOGIN}`：新 `refresh_token` **到手立刻落盘** → 校验新 SESSDATA / DedeUserID / mid 齐全 → 才 `confirm` → 成功后 `AccountManager.applyCredentials()` 原子落库（升代际、清按账号缓存）。只有 `-101` 是 NEED_LOGIN，其余失败一律 RETRY 且**不动本地凭证**。
+  5. `SplashActivity.checkCookieRefresh()` 按三档处理；`resetLogin(reason)` 把触发原因写进日志（此前这条唯一的「自伤」路径静默无痕，用户说掉登录、日志里查不到）。`CookieRefreshScheduler` 同步三档，并在刷新成功后重记 `lastAttemptMs`（`applyCredentials` 会重置节流状态，不重记就变成每 5 分钟轮换一次口令）。
+  6. `AccountSwitchActivity` 尊重 `switchToAccount()` 返回值：26.11.06 起新 `applyCredentials` 会因「mid 与 Cookie 里的 DedeUserID 不一致 / Cookie 为空」整笔拒绝，而页面原来忽略返回值照提示「已切换」→ 用户看到的是「切了等于没切 / 所有账号都登不上」（对应控制台 #89 时段的现象）。
+- **验证**：
+  - 构建：`./gradlew.bat :app:clean` → `:app:assembleDebug`（双 flavor，本机 `private/` 已同步）**BUILD SUCCESSFUL**（1m53s）。
+  - 单测：`testStandardDebugUnitTest` 与 `testCoexistDebugUnitTest` 各 **149 suites / 1600 tests / 0 失败 0 错误 0 跳过**（新增 `CookieJarPolicyTest` 19 例；`CookieRefreshPolicyTest` 由 13 例扩到 18 例）。
+  - 设备（AVD `rebili_api37_sd`，Android 17 x86_64，`standard-universal-debug`）：用 `run-as` 注入一份假登录态（mid / SESSDATA / bili_jct / DedeUserID / csrf / refresh_token）后冷启动。服务端把假会话判成未登录（日志 `E/Cookies cookieInfo 获取/解析失败，跳过本次刷新检查`），**本地凭证一条没少**——回读 `shared_prefs/default.xml`：`SESSDATA` / `bili_jct` / `DedeUserID` / `mid` / `csrf` / `refresh_token` 全在，且**没有** `清空登录态` 日志；随后 `CookiesApi.checkCookies()` 追加的 `b_nut=100` 以干净格式并入（`…; _uuid=fake-uuid; b_nut=100`，**无尾随 `"; "`**，旧实现必留）；启动流程正常走到公告页 → 推荐页，无崩溃。
+  - **未验**：真实登录态下「刷新成功后服务端换发新 SESSDATA」本机无账号可复现，由官方文档语义（`bilibili-API/docs/login/cookie_refresh.md`）+ 纯函数单测覆盖。
+- **遗留**：真机上的「刷新成功后服务端是否真的换发新 SESSDATA」没有登录态可复现，靠官方文档语义 + 本地纯函数单测兜住；`Chrome` 式 Cookie「删除凭据键」的语义被有意忽略（凭据只由登录 / 切号 / 退出改写），若将来需要支持网页端「退出登录」同步下线，得单独设计一条显式失效通道。
+
+### 3.123 「没有更多了」横幅常驻在推荐 / 收藏夹底部不消失（26.11.06，用户点名）
+
+- **现象**：列表底部的「没有更多了」是**列表外的兄弟节点**（`activity_simple_refresh.xml` / `activity_simple_main_refresh.xml` 里排在 `SwipeRefreshLayout` 下面），钉在屏幕底部、不随列表滚走。以前只要某页拿到「没有下一页」的信号就**永久**留着这一条，用户看到的就是「横幅一直固定在推荐和合集-收藏夹子底部，不会隐藏」。
+- **根因**（两条叠加，都不是"某个页面写错了"）：
+  1. `updateLoadMoreTip()` 只按 `end || loading` 置 `VISIBLE`，**没有任何收起路径**——`end=true` 之后只有「再次加载」或「整页刷新」才会把它改回 `GONE`。
+  2. 「第一页就到底」的页面遍地都是：`FavoriteVideoListActivity` 的 `has_more=false`（收藏夹不足一页）、`SubscriptionListActivity` 的 `!has_more`、`DynamicTopicActivity.loadPlaza()` 的无条件 `bottom = true`……这些页面一进来就常驻一条。
+- **改法**（两个列表基类各改一处，覆盖全部列表页）：
+  - 新增纯策略 `util/view/LoadMoreTipPolicy.kt`：`stateOf(loading, end)` → `HIDDEN/LOADING/END`（`end` 优先）、`isVisible()`、`autoHides()`、`END_VISIBLE_MS = 2000`。**只有 END 自动收起**，LOADING 必须等到加载回调——请求慢时按时间收掉会让用户以为列表卡死。
+  - 新增 `util/view/LoadMoreTipController.kt`：组合而非继承（两个基类没有共同父类，`BaseActivity` 有向下类型判断的坑），持有 `TextView` + 一次性的 `postDelayed` 收起任务；每次重画先 `removeCallbacks`，避免「刚显示就翻下一页」被旧定时器提前收掉。文案也一并收进来——以前同一句话在两个基类里各写一份（`DUPLICATES.md` 的 `DUP-13`），改一处必漏一处。
+  - `RefreshListActivity` / `RefreshMainActivity`：字段由 `TextView?` 换成 `LoadMoreTipController?`，`updateLoadMoreTip()` 改为 `runOnUiThread { tip.render(loading, end) }`；新增 `onDestroy()` 调 `release()` 撤掉未到点的定时器（不撤也不崩，只是白留 Activity 2 秒）。
+- **验证**：
+  - 构建：`./gradlew.bat :app:assembleDebug`（双 flavor）**BUILD SUCCESSFUL**。
+  - 单测：`testStandardDebugUnitTest` 与 `testCoexistDebugUnitTest` 各 **184 suites / 1982 tests / 0 失败 0 错误 0 跳过**（新增 `LoadMoreTipPolicyTest` 7 例：四态判定、`end` 优先、只有 END 自动收、时长上下限）。
+  - **设备 A/B（AVD `rebili_api37_sd`，Android 17 x86_64，`standard-universal-debug`，用 `DebugBridge` 的 `start` 直接拉起 `DynamicTopicActivity` 广场页——它 `bottom = true` 且 `setRefreshing(false)`，是「第一页就到底」的最小复现）**，`uiautomator dump` 逐帧读 `@id/loadMoreTip`：
+    - **修前**（`git stash` 掉本改动后重编装包）：t=2.7s / 5.2s / 7.7s / 10.4s / 13.0s / 15.6s **每次都还是「没有更多了」**；
+    - **修后**：t=2.3s 显示「没有更多了」，t=4.7s 起（连续四次 dump 到 t=14.4s）**已不可见**，与 `END_VISIBLE_MS = 2000` 吻合。
+  - 回归：推荐页正常出内容、连续下滑仍能翻页（`fresh_idx=1 → 2` 各一次请求）、滚到底部后 `loadMoreTip` 不在树里（空闲不占位）。
+- **未验 / 说明**：推荐页本身没在设备上走到 `bottom=true`（推荐流是无限流，只有「本页不足一页」或「去重后无新增」才会置 `bottom`），所以设备证据取自同一套基类路径的广场页；收藏夹 / 我的订阅两条真机用例需要有效登录态，本机只有假会话，**未跑**。真手表复验：进一个不足一页的收藏夹 → 底部短暂出现「没有更多了」→ 约 2 秒后消失、列表底部不再被占一条。
+
+### 3.124 连播「按 UP 主投稿」拉的是登录账号自己的投稿（26.11.06，用户点名）
+
+- **现象**：播放页点「连播」，拉出来的队列是**登录账号自己**的投稿，连播层标题（选集卡片上那一行）也变成自己的昵称，而不是当前视频的作者。
+- **根因**（一个字段当两件事用）：
+  - `model/VideoInfo.java` 的 `toPlayerData()` 把 `SharedPreferencesUtil.getLong("mid", 0)`（**当前登录账号**）写进 `PlayerData.mid`；
+  - `PlayerActivity` 的连播按钮又用同一个 `mid` 去 `UserInfoApi.getUserVideos(mid, ...)` 拉「UP 主投稿」，`applyUploaderQueue()` 还把列表里第一条的 `upName` 当连播层标题。
+  - 于是「作者」= 登录账号。`mid` 在播放器里其实只该回答「我是谁」（直播弹幕握手包的 `uid`、进度上报的登录闸），不是视频作者。
+- **改法**（作者与登录态彻底分开，新增一个字段贯穿整条链路）：
+  - `model/PlayerData.java`：新增 `uploaderMid`（作者 mid，0 = 未知），Parcelable 读写**追加在末尾**；`mid` 的注释写明它是登录账号、不是作者。
+  - `model/VideoInfo.java`：新增 `uploaderMid()`（取 `staff[0]`，联合投稿即第一作者；`staff` 为空返回 0），`toPlayerData()` 里另写 `data.uploaderMid`。
+  - `api/PlayerApi.java`：`buildTerminalPlayerIntent` 补 `putExtra("uploader_mid", …)`；`buildResumeIntent` 从会话哨兵回填。
+  - `player/PlaySessionStore.kt`：`PlaySession` 加 `uploaderMid`，编解码把它**追加在标题之后**——老文本（15 段）仍能解析，作者回落 0，标题不受影响（有单测钉住）。
+  - `activity/player/PlayerActivity.kt`：新增字段 `uploaderMid`；连播按钮判据收进新纯策略 `player/PlayerQueueAuthorPolicy.kt`（`!直播 && !番剧 && 在线 && (作者已知 || 有 aid)`）；`loadUploaderQueue()` 用作者 mid，未知时 `resolveUploaderMid(aid)` 用 `x/web-interface/view` 现查（**绝不回退登录 mid**）；切P/换清晰度/互动跳转都把 `uploaderMid` 带进新建的 `PlayerData`；切到别的条目 / 进入分P层时按新 `videoInfo` **重新定稿**（允许 0，不许沿用上一条的作者）；`buildPlaySession()` 落盘。
+  - `activity/user/favorite/FavoriteVideoListActivity.kt`：虚拟合集起播这条自拼 `PlayerData` 的路径补一行 `uploaderMid`（`videoInfo` 本来就在手里，省掉播放器现查的 1~2 个请求）。
+  - **顺带修正**：番剧（PGC）播放页不再显示「连播」按钮——它连的是剧集列表，原来的按钮点了也是去拉登录账号的投稿。
+- **验证**：
+  - 构建：`./gradlew.bat :app:assembleDebug`（双 flavor）**BUILD SUCCESSFUL**。
+  - 单测：`testStandardDebugUnitTest` **185 suites / 1991 tests / 0 失败 0 错误 0 跳过**（新增 `PlayerQueueAuthorPolicyTest` 9 例：按钮矩阵六格 + 换条目/换P 的作者取舍；新增 `VideoInfoUploaderMidTest` 4 例：单P / 联合投稿 / 空 staff / `toPlayerData` 里登录 mid 与作者 mid 不串；`PlaySessionCodecTest` 由 4 例扩到 6 例，含 15 段老文本回落 0 且标题完好）。
+  - **设备（AVD `rebili_api37_sd`，Android 17 x86_64，`standard-universal-debug`，用 `DebugBridge` 注入 `mid=999888` 当"登录账号"）**：`VideoInfoActivity`（aid=80433022，作者 486906719「索尼音乐中国」）→ 播放 → 读回会话哨兵 `player_last_session_v1`：
+    `PLAYSESSION1  80433022  137649199  999888  0  0  0  0  45248  212394  collection  0  0  1793952400682  【官方 MV】…  486906719`
+    —— 第 4 段是登录 mid、第 16 段是**视频作者**，两者分离且作者值正确，证明 `VideoInfo → PlayerData → Intent → PlayerActivity → 会话哨兵` 整条链路搬的是真作者。
+  - **未验（设备）**：点「连播」按钮那一下没在设备上跑到。该按钮在播放器控制栏里，而本机 AVD 上控制栏用 `input tap` / `motionevent` 都拉不出来（`uiautomator dump` 只在极少数帧里出现过 `bottom_control`，之后再也复现不了；怀疑是 dump 等 idle 超过 4 秒自动隐藏窗口）。所以「`arc/search?mid=<作者>`」这条请求没有设备抓包证据，靠 `PlayerQueueAuthorPolicyTest` + 代码走查覆盖。真手表复验：进任意投稿 → 点「连播」→ 连播层标题应是**视频作者**的昵称、队列是该作者的投稿；收藏夹里切到另一个 UP 主的条目后再点「连播」，队列应跟着换成新作者。
+- **遗留**：①联合投稿取 `staff[0]`，接口没有明文契约保证顺序（`getInfoByJson` 在联合投稿分支丢弃了 `owner`），真遇到排错再按 `staff[i].sign == "UP主"` 筛；②`resolveUploaderMid()` 现查时 `VideoInfoApi.getVideoInfo` 会顺带发一次 `archive/relation`（登录态下），所以「入口没带作者」的路径比带作者多 1~2 个请求，已在收藏夹虚拟合集那条入口上堵掉。
+
+### 3.125 「跳到指定时间」打开时按当前位置预填（26.11.06，用户要求）
+
+- **需求**：用户说「我希望打开跳转页后，自动填写当前的时间」——指播放器菜单里的「跳到指定时间」（`jump_time_btn` → `InputDialogActivity`），不是外部播放器跳转页 `JumpToPlayerActivity`（那个页面没有时间输入）。原状是每次打开都是空框，用户想微调几秒也得自己重新敲一遍当前时间。
+- **改法**（格式与解析同一处真相，不让两份逻辑漂移）：
+  - `player/PlayerSeekPolicies.kt` 的 `PlayerJumpTimePolicy` 新增 `prefillText(positionMs: Long): String?`：`<=0` 返回 null；`totalSec = positionMs / 1000`，`hour > 0` 用 `String.format(Locale.US, "%d:%02d:%02d", …)`（`1:02:03`），否则 `String.format(Locale.US, "%02d:%02d", …)`（`01:30`）——**与 `StringUtil.toTime` 的进度文本口径一致**，且**固定 `Locale.US`**，避免某些 locale 的 `%d` 输出非 ASCII 数字后 `parseToSeconds` 又解析不回来。与 `parseToSeconds` 放在同一个 `object` 里，靠单测做 round-trip 钉住。
+  - `PlayerActivity.initJumpToTimeButton()`（`:1714` 起）：`val prefill = PlayerJumpTimePolicy.prefillText(video_now.toLong())`，非 null 时 `putExtra("initial_text", prefill)`。**位置取 `video_now` 而不是 `ijkPlayer.currentPosition`**：seek 之后 `video_now` 先写、IJK 的 `seekTo` 后落地，落地前 `currentPosition` 还返回旧位置（`PlayerActivity.kt:817` 附近的既有注释已记录这条坑）。
+  - `InputDialogActivity` **一行不改**：光标按既有行为落在预填文本末尾。预填只当「底稿」，用户明确不要整串选中（初版做过 `select_all` extra，当天按用户意见撤回）。
+- **验证**：
+  - 单测：`PlayerJumpTimePolicyTest` 扩到 15 例（新增「预填文本按播放位置格式化」：0 / -1 → null、90_000 与 90_999 → `01:30`、5_000 → `00:05`、3_723_000 → `1:02:03`；「预填文本能被原样解析回同一秒」：`1_000 / 59_999 / 60_000 / 3_599_000 / 3_600_000 / 7_384_000` 逐个 round-trip）。
+  - 构建：`./gradlew.bat :app:assembleDebug :app:testStandardDebugUnitTest` 与 `:app:testCoexistDebugUnitTest` 均 **BUILD SUCCESSFUL**（双 flavor）；两个 flavor 单测各 **186 suites / 2011 tests / 0 失败 0 错误 0 跳过**（本机 `private/` 已同步，数字含其注入的用例类）。
+  - **注意一次假失败**：首次跑 `testStandardDebugUnitTest` 报 `AnimeRuleCssTest > keywordKeepsFirstWordAndDropsSpecialChars`（`AnimeRuleCssTest.kt:295`）失败，单独跑该用例/该类又全绿；查 mtime 发现 `private/src/main/java/.../AnimeRuleCss.kt` 与 `AnimeRuleCssTest.kt` 在构建前后被另一个并行会话改动过（16:47:28 / 16:48:04），属「并发构建撞上在途中间态」，与本改动无关，重跑全绿。
+  - **设备（AVD `rebili_api37_sd`，Android 17 x86_64 横屏 2400×1080，`standard-universal-debug`）**走完整链路「首页 → 热门 → 视频详情-简介 → 点封面起播 → 双击唤出控制栏 → `menu_btn` → 「跳到指定时间」」：① 播放到 `00:03` 打开弹窗，EditText 预填 `00:03`（hint 不再显示，即确实有内容）；② 点「确定」后进度 `00:49/02:34`（在预填基础上改成 45 秒并跳过去），证明预填文本能被 `parseToSeconds` 解析并正常 seek。**注**：上述设备证据是「整串选中」版本拍的；撤回选中后只改了 `InputDialogActivity` 的 `setSelection` 一行（回到仓库原有行为），按用户要求未重跑。
+  - **反例验证**：视频播完（`02:34/02:34`）后打开弹窗，框里是空的（`video_now=0` → `prefillText` 返回 null），仍是原来的输入体验——不会预填出一个 0 秒的假位置。
+- **遗留 / 说明**：①「当前时间」取的是**上报进度用的 `video_now`**（每 250ms 由 `progressChange()` 刷新），最长滞后 250ms，对跳转精度无实际影响；②光标落在末尾，想改高位得先挪光标（用户选择「不要整串选中」的直接后果）；③寻址到秒（与输入格式的最小单位一致），不支持毫秒预填。
+
+### 3.126 内置播放器设置按七组重构（26.11.06，用户要求「改设置-播放与播放器的层级结构」第 1 步 / 共 6 步）
+
+- **背景**：用户要「假播放器界面当设置」，最终目标是把播放器控制按钮做成可自定义槽位（设计文档 `docs/superpowers/specs/2026-11-06-player-ui-custom-layout.md`，§2 十七条口径已与用户逐条确认）。六步走：①抽分组数据（本条）②布局纯逻辑 + 单测 ③播放器按布局挂载按钮 ④假界面只读 ⑤编辑能力 ⑥顶部三开关 + 其余点击映射。
+- **原状**：`SettingTerminalPlayerActivity` 里一段 200 行的 `ArrayList<SettingSection>().apply { … }`，48 项平铺，中间 5 条 `divider` 全无标题，「从历史位置播放 / 视频可缩放 / 缩放时可移动」被视觉上并进了上一个「播放默认值」标题之下。
+- **改法**：设置项全集搬到新文件 `app/src/main/java/com/RobinNotBad/BiliClient/player/PlayerSettingsGroups.kt`：`data class Group(key, title, sections)` + 七个 `private fun`（gesture / defaults / display / decode / danmaku / subtitle / toolbar）。对外三个入口：`build(context)`（全部组）、`group(context, key)`（按组取，给假界面的按钮卡片用）、`flatten(context)`（每组前插一行 `type="title"` 的 `SettingSection`，供「完整设置」页）。Activity 只剩 47 行：`sections = PlayerSettingsGroups.flatten(this)` → `SettingsAdapter` → 把 `list_choose` 回写接回 `applyListChooseResult`。
+- **组名**：新增 7 条字符串 `setting_player_group_*`（手势与滑动 / 播放默认值 / 画面与显示 / 渲染与解码 / 弹幕 / 字幕 / 界面按钮），**不用中文硬编码**——这条路径不经过 `SettingText` 的字面量映射表。
+- **分组实况（48 项一项没少、key 一个没动，只重排 + 补标题）**：手势与滑动 10 / 播放默认值 8（原 7 项 + 从历史位置播放）/ 画面与显示 5（显示实时人数·视频可缩放·缩放时可移动·显示高能进度条·自动跳过片头片尾）/ 渲染与解码 3 / 弹幕 12 / 字幕 4 / 界面按钮 6（5 个「显示××按钮」+ 互动选项字体大小，这 5 个开关会在第 3 步被布局取代后删除）。
+- **顺带修掉的真缺陷**：`SettingsIndex.kt` 的「内置播放器设置」搜索词漏收录 7 项，本次补 6 项（左右滑动控制进度 / 滑动调进度灵敏度 / 弹幕数量保护 / 直播弹幕停留倍率 / 弹幕缓存上限 / 长按倍速档位）；「显示锁定按钮」故意不补——该开关第 3 步就要删。另外把 4 个组名加进搜索词，点一下直接滚到那一组开头。
+- **验证**：`./gradlew.bat :app:assembleDebug` 双 flavor BUILD SUCCESSFUL；`./gradlew.bat :app:testStandardDebugUnitTest` BUILD SUCCESSFUL（186 suites 全绿）。真机观感（组标题在本页列表里的字号/间距、`highlight` 定位是否准）**尚未上机**，等第 4 步假界面一起验。
+- **注意（给后来者）**：`SettingsIndex` 的搜索定位靠 `indexOfFirst { it.name == highlight }` 与页内 `SettingSection.name` **逐字比对**，插了 title 行不影响它，但**改任一项的名字必须同步改索引**，否则搜索命中后跳过去停在原地。
+
+### 3.127 设置页还原成改造前的样子，播放器界面独立成一个入口（26.11.06，用户点名）
+
+- **背景**：用户在看过假播放器预览后改口：「设置页面还原成没改过之前的样子，但是功能保留（播放器界面设置单独开一个界面）」。
+- **还原**：`SettingMainActivity.buildPlayerGroup()` 的描述回到「选择播放器、清晰度与内置播放器设置」、`target` 回到 `SettingPlayerChooseActivity`；`SettingsIndex` 一级 Entry 同步还原，子页面区保留「播放器界面」并排在「选择播放器」之后。
+- **新入口**：`res/layout/activity_setting_player_choose.xml` 在「清晰度」卡片前插一张 `MaterialCardView id=player_ui_choose`（标题「播放器界面」+ 副标题「调整播放器上的按钮与布局」），`SettingPlayerChooseActivity` 里点它开 `SettingPlayerUiActivity`。选这张页而不是主设置页，是因为四个播放侧入口（视频详情 / 番剧详情 / 直播间 / `PlayerApi`）都直接开「选择播放器」页，放在这儿不额外增加一层。
+- **验证**：设置主页第 0 行回到「选择播放器、清晰度与内置播放器设置」（模拟器实测），点进去能看到新的「播放器界面」卡片。
+
+### 3.128 播放器界面：点空白收起卡片、可能被收起的按钮加注意标志（26.11.06，用户点名）
+
+- **问题一**：卡片打开后点列表空白处关不掉（用户「点击空白处底部按钮没变化」）。原来只有返回键和卡片里的动作能收卡片。改法：`activity_setting_player_ui.xml` 在 `contentList` 与 `cardPanel` 之间加一层遮罩 `View id=cardScrim`（`#66000000`、clickable），`showCard()` 里 `bringToFront()` 后显示、点它 `hideCard()`，`hideCard()` 里连带隐藏。
+- **问题二**：有些按钮在特定视频里根本没有（直播没有循环/分P、本地音频没有清晰度、无字幕视频没有字幕……），用户摆上去以后会以为布局配坏了。改法：`PlayerButtons.Button` 新增 `mayHide` 标记（true 的 11 个：倍速/发弹幕/循环/听视频/自动连播/看点/视频信息/跳转时间/连播队列/清晰度/分P），播放器界面的槽位行、候选按钮列表、组内成员列表都在描述里追加「注意：有些视频里不显示」。
+- **顺带**：删掉预览版遗留、已无人引用的 `setting_player_ui_hint` / `_speed_sample` / `_title_sample` / `_online_sample` 四条字符串，并修掉一处重复的 `setting_player_ui_region_left`。
+- **验证**：`assembleStandardDebug` + 单测（187 suites / 2039 cases / 0 failure）；模拟器上点「锁定」行弹出卡片、点遮罩收起正常。
+
+### 3.129 锁定按钮被摆到右列/底部后，锁屏就解不开了（26.11.06，用户点名）
+
+- **现象**：用户把锁定按钮从默认的左列摆到右列或底部，锁屏后按钮跟着控制栏一起消失，锁再也解不开；而且「原有的地方（左列）的按钮还显示着」。
+- **根因**：右列与底部两区的槽位在 `control_layout` 内部，锁定态 `layout_control.visibility = GONE` 会把整条控制栏连按钮一起藏掉。而 `left_control` 在 root 层（`control_layout` 之外），锁定时只单独隐藏了 `lock_btn` / `text_speed`，所以用户摆进左列的**其它**按钮会浮在遮罩上——两个方向都是同一个结构性疏忽：锁定态以前只认识「锁定按钮和倍速文字」这两个写死的成员。
+- **改法**：
+  - `activity_player.xml` 在 `lock_overlay` 之后加 `FrameLayout id=lock_holder`（match_parent、不可点），作为锁定期间锁定按钮的落脚点。
+  - `PlayerActivity.parkLockButton()` 把 `lock_btn` 搬进 `lock_holder`，按它原来所在的区决定贴边（左/右贴边居中、底部贴底，`lockButtonGravity()` 从当前布局里找含 `lock` 的槽，含组内）；`unparkLockButton()` 解锁后按用户布局摆回去。锁定态三相处都补上 `left_control` 的显隐，LOCKED_ICON_VISIBLE 时 `parkLockButton()`。
+  - `applyPlayerButtonLayout()` 记住当前布局（`playerUiLayout`），并在锁定态里重摆时重跑一遍 `applyLockPhase(lockPhase)`——否则从设置页回来会把图标摆回被藏起来的控制栏里。
+  - `PlayerButtonSlots.clearAll()` 补一条：被外部搬走的真身（真身不在任何槽位容器里时）也要收回按钮池。不补这条，解锁重摆时真身被当成「已摆放」，槽位里摆出的是一个影子、真身留在遮罩层原处——用户看到的就是「锁解开后右侧还是有锁的图标」。
+- **验证**（模拟器 emulator-5554，Android 17，1080×2400，设备上存的布局把锁放在右列第 4 格）：点锁 → `lock_overlay` 可见、`left_control` 变 GONE、按钮搬进 `lock_holder` 且贴在右边缘垂直居中（936,1077-1062,1203）；点画面浮现图标 → 点图标解锁后 `lock_overlay` GONE、`lock_holder` 空、`lock_btn` 回到 `right_column_slots` 第 4 格。**踩坑**：浮现图标只有约 3 秒，用 `adb` 分两次 tap 会错过窗口（第二次点到遮罩上，看起来像「点了没反应」），要在一条 `sh -c` 里连着敲两次 tap。
+
+### 3.130 顶部标题栏三件套：显示标题 / 显示电量 / 显示时钟（26.11.06，用户点名「写在完整设置里吧」）
+
+- **背景**：布局可自定义之后，顶部标题栏仍是常显、没有开关。第 6 步先做成了「播放器界面」里点标题栏弹出的卡片，用户要求改到「完整设置（内置播放器设置）」里。
+- **改法**：
+  - `player/PlayerSettingsGroups.kt` 的 `display()` 最前面加三条 `switch`：`显示标题` / `显示电量` / `显示时钟`，键 `SettingsKeys.PLAYER_UI_SHOW_TITLE` / `_BATTERY` / `_CLOCK`，默认 `"true"`（与改造前常显一致）。
+  - `activity/settings/SettingsIndex.kt` 的「内置播放器设置」补三条搜索词（名字与页内 `SettingSection.name` 严格一致，否则搜索点进来定位不到）。
+  - `activity/player/PlayerActivity.kt` 新增 `applyTopBarSwitches()`，在 `applyPlayerButtonLayout()` 末尾调用（`onResume` 会重跑 → 设置里改完返回即生效），按三个键分别设 `R.id.text_title` / `R.id.battery` / `R.id.clock` 的显隐。用 `findViewById` 现取不加字段——只在应用设置时读一次。
+  - 「播放器界面」页去掉「画面元素 → 标题栏」那一行与其 `onElementClick("title")` 分支，以及只服务于它的 `switchSection()` 和 `setting_player_ui_label_title` 字符串，避免两处入口。
+- **验证**（模拟器）：`显示标题` 关掉后进播放页，顶栏只剩电量与时间、标题消失（截图 `outputs/player-top-off.png`）；默认全开时 `dumpsys` 里 `text_title` / `battery` / `clock_layout` 都是 `V`（可见），与改造前一致。
+- **留给后来者**：`layout_top` 整条仍可点（点标题栏退出播放）。把标题关掉后这块区域变成不可见的可点区——这是沿用改造前的行为，没再动；若以后要收紧，判据应放在 `layout_top.setOnClickListener` 那一处（:4228 附近）。
 
 ## 4. 历史章节索引
 
@@ -1025,6 +1499,23 @@
 
 | 六十三 | 26.10.31 末：DASH 双流音画不同步 / 音频轨不加载 / 听视频 -10000 的根治（引入统一时钟内核） | 参考兄弟仓库 `BiliTerminal-Revival` 的 ExoPlayer 方案：新增 `player/UnifiedDashPlayer.java`（接口 `setPlaybackSpeed` / `setAudioSource` / `setAudioOnly`）与 `player/ExoDashMediaPlayer.java`（`extends AbstractMediaPlayer`，ExoPlayer **2.19.1**，`MergingMediaSource(true,true,video,audio)` 一条时钟同时消费视频+音频；`setAudioOnly(true)` 只建音频源，供听视频模式用），`app/build.gradle` 加 `com.google.android.exoplayer:exoplayer-core:2.19.1`；`PlayerActivity` 的播放器字段 `ijkPlayer:IjkMediaPlayer?` 抽象成 `playerCore:IMediaPlayer?`（112 处改名），`createPlayerOrBail()` 在「在线点播 && 非直播 && 有远程音轨」时返回统一内核、否则回退 `createIjkPlayerOrBail()`；`setIjkOption()` / `applyPlayerSpeed()` / `MPPrepare()` 按实例类型分支（`IMediaPlayer` 没有 `setSpeed` / `setDataSource(String,Map)`）；`initAudioTrack()` 对统一内核直接 return（否则叠加出第二路音频）；`onPrepared` 里起播后调用 `scheduleUnifiedHealthCheck()`（2.5s 取样 + 2s 复检，位置前进 <800ms 判定不兼容 → 记 `player_unified_blocked_version=BuildConfig.VERSION_NAME` + `retryAfterPlayerError()` 回退 IJK，同版本不再重试）。取流侧配套：新增 `player/StreamUrlPolicy.kt`（主机优先级选主地址 + 备份列表，12 例单测）、`DashData.getBestCompatibleAudioStream()`（只选 AAC/mp4a，绝不选 flac/dolby，7 例单测）、`PlayerData.videoBackupUrls/audioBackupUrls`、`PlayerApi` 的 WBI→legacy `x/player/playurl` 回退与 durl `backup_url` 解析、`jumpToPlayer` 下发 `video_backup_urls`/`audio_backup_urls`；`PlayerActivity.rotateVideoBackupUrl()` 在播放器报错重建时换下一个 CDN。文档同步 `architecture-map.md` §7.4、`FEATURES.md` §3.6 | 部分遗留（`assembleDebug` 双 flavor + `:app:testStandardDebugUnitTest` 通过，1131 用例全绿，含新增 `StreamUrlPolicyTest` 12 例、`DashDataCompatibleAudioTest` 7 例；**MuMu 模拟器（127.0.0.1:7555，x86_64 / Android 12）实测**：1080P DASH 双流能起播（`onTracksChanged: video/avc 1920x1080`、`ExoPlayerLib/2.19.1`），听视频模式（只看音频轨）能持续前进、AudioTrack 长期 `started`，证明统一内核与音频路径可用；但该模拟器上**只要视频轨参与，播约 1.1–1.4 秒后必掉回 BUFFERING 且永不恢复**（已排除 seek、合并音频、App pause、changeVideoSize、异步/同步 MediaCodec 适配器、2.18.7/2.19.1 版本差异；AudioTrack 在同一毫秒被置 paused，Exo 不报 error，播放线程空闲在 Looper），同一模拟器上官方 B 站 App 正常，判断是 MuMu 视频解码/Surface 链路问题；健康检查+回退链路已实测触发（日志 `统一时钟播放器在本机不可用（起播后播放位置仅前进 0ms）` → 重建 IJK → `在线 DASH 音轨已就绪`），但该模拟器随后 IJK 视频位置也不再前进（环境已劣化），**端到端「不卡 + 音画同步」仍需真机复验**；另外看到 `play_qn=80` 起播流仍可能被 `fnval=1` 路径回填成 720P（`applyActualQuality`），需真机确认详情页预取链路） |
 | 六十四 | 26.11.01：发版 26.11.01（2611010，紧急回退版）与官网同步尝试 | 版本号 `26.10.31`→`26.11.01`（`versionCode 2610311`→`2611010`）、把 26.10.31.1 的两条日志（倍速两路重叠音频、扫码登录停轮询后外露英文异常）归档进 `update_history_log` 的 `## 2026-10-31` 组、`update_log_current` 按用户定稿写 5 条（播放器整体退回 26.10.27 稳定实现 / 菜单退出按钮 / 圆屏列表实验效果 / 媒体控件归类修复 / 列表封面请求复用）；提交 `d7d5abd` 推送 `main` 与 tag `26.11.01`；CI「构建发行版并创建 Release」run `41220070951` 全部 success（`verify-version` + `build-and-release`，含私有源码注入），GitHub Release `26.11.01` 10 个资产（8 个 APK + `md5sums.txt` + `release-links.txt`，正文 5 条 + MD5 表 + `versionCode` 标记），Gitee 发行版同步 11 个资产，`/api/release` 已返回 `tag=26.11.01` + 5 条日志；出包体积（release）：arm64 7212652 B / v7a 6765149 / x86 7316806 / universal 13104357，coexist 四包 7259921 / 6812411 / 7364074 / 13151631（对比 26.10.31.1 的补丁 .so 版已回落）；文档同步 `architecture-map.md` §7.4、`FEATURES.md` §3.6 与 §3.90 | 部分遗留（**官网静态页仍未更新**：线上 `data/releases.json` 最新条目仍是 `26.10.14`、`changelog.html` 仍写旧版本；本轮确认站点源码仓库 `https://github.com/PurpleEthereality/BiliTerminal-RE_web.git` 已 `Repository not found`（GitHub API `/repos/PurpleEthereality/BiliTerminal-RE_web` → 404，该账号仓库列表里也没有站点仓库），本地站点仓库 `bili-terminal-site` 的三个同步提交（`a992a72` 26.10.31、`10a6e0b` 26.10.31.1、`2f75bec` 26.11.01）都推不上去，且顺带修了 `tools/sync-release.py` 的发行日期口径（GitHub `published_at` 是 UTC，凌晨发版会写成前一天，已统一换算东八区）——需要用户决定重建该仓库并把三个提交推上去、或在 Netlify 里改接另一个仓库/账号；动态接口 `/api/release` 正常，客户端更新检查与下载不受影响。另：本次回退撤掉了 ijkplayer 内核补丁与 ExoPlayer 统一时钟，**播放器改动未在真机复验**（用户自行验证），DASH 1080P 等 26.10.30/31 的播放能力随回退一并移除，见 §3.90） |
+| 六十五 | 26.11.01：圆屏适配下首页/推荐页的时钟被顶到屏幕最右、被圆盘切掉 | 用户点名（给了期望/实际两张顶栏截图）。`res/layout/activity_simple_main_refresh.xml` 是全工程唯一把 `@id/timeText` 套进一层 `@id/menuArea`(LinearLayout) 的顶栏布局，而 `BaseActivity.setRound()` 的圆屏居中靠 `newTopbarParams(clock).addRule(RelativeLayout.CENTER_HORIZONTAL)`；父容器是 LinearLayout 时拿到的是 `LinearLayout.LayoutParams`，`is RelativeLayout.LayoutParams` 判假 → 居中规则静默跳过，时钟仍被 `alignParentRight` 钉在最右。改法：删掉 `menuArea`、把时钟提成 `@id/top` 的直系子 View、`pageName` 的 `layout_toStartOf` 改指 `@id/timeText`（结构对齐 `activity_simple_refresh.xml`，`setRound()` 零逻辑改动，只改注释）；`docs/agents/pitfalls.md` 与 `docs/architecture-map.md` §8.5 各补一条约束 | 已闭环（`assembleDebug` 双 flavor 通过，两 flavor 单测各 111 suites / 1171 tests / 0 失败；AVD `wear5` 466×466 圆屏实测：修前 `timeText [380,13][443,46]` → 修后 `[201,13][264,46]`（中心 232.5 ≈ 屏中心 233），另外 3 个同布局页面同步修好，`player_ui_round=false` 回归对照版式零变化；真机未验） |
+| 六十六 | 26.11.02：「我的反馈」空态点顶栏不退出、改成原地刷新 | `res/layout/activity_simple_refresh.xml` / `activity_simple_main_refresh.xml` 的 `emptyTip` 加 `android:layout_below="@id/top"`。空态浮层此前排在 `top` 之后且 `match_parent`，盖住整条顶栏；`setOnEmptyRetry` 一给它装点击监听，点顶栏就变成重拉列表（`FeedbackListActivity` 的 action 是 `load()`）。同一份模板的首页菜单栏也一起修好 | 已闭环（`assembleDebug` 双 flavor 通过、`testStandardDebugUnitTest` 111 suites / 1171 tests / 0 失败；AVD `wear5` 466×466 实测：修前点顶栏 `(233,65)` 触发 `GET /terminal/feedback/mine` 且停在原页，修后同一点位返回 `SettingMainActivity` 且无请求，点空态自身区域仍能重试；真机未验） |
+| 六十七 | 26.11.02：发版 26.11.02（2611020）与官网同步尝试 | 版本号 `26.11.01`→`26.11.02`（`versionCode 2611010`→`2611020`）、把 26.11.01 的 5 条日志归档进 `update_history_log` 的 `## 2026-11-01` 组、`update_log_current` 按用户口径（「直接发」）写 12 条：虚拟合集拆分成「虚拟合集 / 收藏夹点击即播」两个开关、长按倍速档位可配、多P 续播、看图双击缩放与评论区图片单击下载、外置 SD 卡缓存交外部播放器失败回落内置播放器、定期续期登录凭证、短视频比例与保亮屏、播放器一批修正、界面一批修正、菜单设置不再被重置、崩溃兜底、失败提示说人话——覆盖 26.11.01 之后的 27 个提交（§3.96~§3.106）；提交 `81e9ffc` 推送 `main` 与 tag `26.11.02`；本地 `:app:assembleRelease` 先跑通（BUILD SUCCESSFUL 3m35s，standard + coexist 各 4 包）再推 tag；CI「构建发行版并创建 Release」run `41365799799` 全部 success（`verify-version` + `build-and-release`），GitHub Release `26.11.02` 10 个资产（8 APK + `md5sums.txt` + `release-links.txt`，正文 12 条 + MD5 表 + `versionCode` 标记，已逐条回读 1~12 全在），Gitee 发行版同步 11 个资产（8 APK + `md5sums.txt` + 源码归档 zip/tar.gz，**每个渠道 4 个包齐全**），`/api/release` 已返回 `tag=26.11.02` + 12 条日志 + 11 个 file；出包体积（release）：arm64 7229559 B / v7a 6782053 / x86 7333715 / universal 13121277，coexist 四包 7276714 / 6829208 / 7380871 / 13168424；`main` 推送触发的「CI 编译与单测自检」run `41365463839` success | 部分遗留（**官网静态页仍推不上去**：站点仓库远端 `PurpleEthereality/BiliTerminal-RE_web` 仍 `Repository not found`，本地 `bili-terminal-site` 已用 `tools/sync-release.py` 生成同步（`data/releases.json` + `index.html` 版本号/直链/JSON-LD + `sitemap.xml` lastmod + 重新生成 `changelog.html` 等 7 文件）并提交 `81b8ee7`，但推送失败、仓库现 ahead 6；`sync-release.py` 里的 `gen-pages.py` 子进程报退出码 1（输出编码问题），单独重跑 `python tools/gen-pages.py` 成功、页面已含 26.11.02；线上静态 `changelog.html` 仍停在 `v26.10.14`，动态接口 `/api/release` 已更新、客户端更新检查与下载不受影响——仍需用户决定重建站点仓库或给 Netlify 换绑定。另：CI 的「归档 R8 mapping 到控制台」被 `::warning::` 跳过（**未配置 Secrets.HK_SSH_KEY**），本版崩溃在控制台无法解混淆，补 Secret 后需单独补传 26.11.02 的 mapping；`readme.md` 的 version badge 长期停在 `26.10.26`，本次一并更到 `26.11.02`） |
+
+| 六十八 | 26.11.03：按后台控制台反馈落地 5 条建议（App #94 拖动手感 + 缓存页排序搜索、#92 热搜跑马灯、#91 下载不休眠；QQ #9 精确空降、#7 锁定按钮开关） | ① **#94a**：新增 `activity/player/PlayerSeekPolicies.kt` 里的 `PlayerSwipeSeekScalePolicy`（六档 0.25/0.5/1.0/1.5/2.0/3.0、`DEFAULT_SCALE=1.0f`、纯函数 `targetMs(startMs,deltaX,widthPx,durationMs,scale)` 钳到 `[0,duration]`），`PlayerActivity.kt:3842` 每次横滑激活时重读存档、`:3856` 换用新换算；设置页「左右滑动控制进度」下方新增 list_choose「滑动调进度灵敏度」。② **QQ#9**：`PlayerJumpTimePolicy.parseToSeconds`（纯秒 / `mm:ss` / `hh:mm:ss`、全角冒号、分秒 <60、≤3 段、`MAX_PART=999999`）+ `clampMs`；`res/layout/activity_player.xml:382-397` 新增 `jump_time_btn`（默认 `gone`，`onPrepared` 非直播才显示），`PlayerActivity.kt:1438/1454` 走 `startActivityForResult` + `onActivityResult`（`PlayerActivity` 是原生 `Activity`，没有 `registerForActivityResult`），非法输入只提示、越界先提示再钳到结尾。③ **QQ#7**：新 key `SettingsKeys.PLAYER_UI_SHOW_LOCK_BTN="player_ui_showLockBtn"`（默认 true）；`PlayerLockPolicy.phaseWithLockButtonDisabled()` 在状态机层把「按钮不可用」与「锁定」钉成互斥（否则锁定态 overlay 吞触摸 + 唯一解锁入口被藏 = 死锁），`refreshLockButtonSetting()` 关闭瞬间若已锁定则强制回 `UNLOCKED`。④ **#94b**：新增 `util/LocalListSort.kt`（`enum Key{DEFAULT,TITLE,TIME,SIZE}` + 七档 `OPTION_KEYS`/`OPTION_ASCENDING`，`videoOrder`/`folderOrder` 返回**原始下标**，方向翻转手写比较器以避开 minSdk19 上 `Comparator.reversed()` 要 desugaring）；`model/LocalVideo.java` 加 `lastModified`；`LocalListActivity.kt` 加 `btnSort`/`btnSearch`/`btnSearchClear` + 七档排序菜单 + 关键词搜索，排序过滤只发生在 `CacheListAdapter` 显示层（多选/删除/移动/虚拟合集仍按原始条目下标）；`activity_simple_main_refresh.xml` 是共享模板，三个按钮默认 `gone` 不污染其他页。⑤ **#92**：`item_hot_search.xml` 的 `keywordText` 换成 `ui/widget/MarqueeTextView`（删 `ellipsize=end`），适配器不重复调 `setMarquee()`（RecyclerView 复用同一实例、`init` 已置 `isSelected`）。⑥ **#91**：新增 `util/DownloadWakeLock.kt`（`PARTIAL_WAKE_LOCK` tag `BiliTerminal:download` + `WIFI_MODE_FULL_HIGH_PERF`、`setReferenceCounted(false)`、`@SuppressLint("WakelockTimeout")` 故意不设超时）与 `util/DownloadWakeLockCounter.kt`（`DownloadService` 与 `DownloadActivity` 共用同一把系统锁的计数）；`DownloadService.kt:451`/`:472-475` 与 `DownloadActivity.kt:112`/`:160-162` 是 acquire/release 配对（覆盖图片保存、前台视频/番剧、自更新 `.bak`），`DownloadActivity.kt:77`/`:400` 补 `FLAG_KEEP_SCREEN_ON`；`AndroidManifest.xml:31-37` 新增 `WAKE_LOCK` 权限 + 中文理由（WifiLock 只要 `WAKE_LOCK`，没恢复 `ACCESS_WIFI_STATE`） | 部分遗留（`./gradlew.bat :app:assembleDebug :app:testStandardDebugUnitTest -x lint` BUILD SUCCESSFUL；`app/build/test-results/testStandardDebugUnitTest` **134 suites / 1445 tests / 0 失败**，新增 `PlayerSwipeSeekScalePolicyTest` 13、`PlayerJumpTimePolicyTest` 13、`PlayerLockPolicyTest` +2（15）、`LocalListSortTest` 14、`DownloadWakeLockCounterTest` 4。AVD `wear5`（466×466 圆屏，x86_64 镜像没有 x86 32 位支持，装的是 arm64-v8a 包走 ARM 翻译）实测：**热搜首行关键词确实在横向滚动**——连续三帧同区域像素差 2992/2729/3357，肉眼可见「志遗体在京火化 → 体在京火化 → 京火化…刘延」推进；**播放器设置页两条新项都在且能落盘**——「滑动调进度灵敏度」选 0.5x 后 prefs `player_swipe_seek_scale=0.5`、「显示锁定按钮」关掉后 prefs `player_ui_showLockBtn=false`。**播放页内三项部分实测**（同一台 wear5，用 `am start .../activity.player.PlayerActivity --es url http://10.0.2.2:8765/Big_Buck_Bunny_360_10s_1MB.mp4 --es title BBB` 直连起播，主机用 `python -m http.server` 供片）：**锁定按钮两分支都对**——`player_ui_showLockBtn=false` 时 dump 出的 `right_control` 只有 `danmaku_btn`/`rotate_btn`/`menu_btn`，改回 `true` 后出现 `lock_btn [8,147][64,203]`；**跳到指定时间入口通**——菜单面板点开后有 `jump_time_btn`（圆屏 176px 宽不截断），点它弹出「跳到指定时间」的 `InputDialogActivity`（hint「秒数 / mm:ss / hh:mm:ss」），暂停在 `00:02/00:05` 时输入 `00:04` 确定后进度变 `00:04/00:05`（后续重复尝试中有几次没跳，怀疑暂停态下进度文本不刷新或点击落空，尚未稳定复现）；**横滑按倍率生效**——`player_swipe_seek_scale=0.5` 时 `input swipe 120 359 300 359 400` 把 `00:00/00:10` 移到 `00:01/00:10`（180/466×10s×0.5≈1.9s，量级一致；未做 0.5x/1.0x A/B，改存档需同进程写才生效）。测试期间该模拟器被并行会话占用（对方在测番剧页，会反复重装同一包并抢前台），部分操作因此中断。**遗留**：圆屏上输入法弹出会盖住「取消/确定」，必须先收键盘再点（`InputDialogActivity` 的既有问题，不是本次引入）。**#91 唤醒锁未实测**（需要登录态跑真实下载任务），只有计数逻辑单测；真机未验）
+
+| 六十九 | 26.11.04：部分视频播放时弹「播放器可能遇到错误！错误码：-10000」（playurl 的 mcdn/PCDN 直链缺 Referer 被 CDN 403） | 现象：真机 coexist debug 播 `BV1c3pk6LEaa`（aid=117436804242218 / cid=42726132853）停在「载入视频中」`00:00/00:00`，日志 `E PlayerActivity>MPPrepare$lambda$28 \| ijk-err>播放器可能遇到错误！\n错误码：-10000\n附加：0`，紧接 `I MsgUtil>showMsgLong` 弹同文案。根因：`playurl` 高峰把直链调度到 mcdn/PCDN 边缘节点（`https://r5uw39t.edge.mountaintoys.cn:4483/upgcxcode/53/28/42726132853/42726132853-1-16.mp4?…&os=mcdn&og=cos&upsig=…`），该 host 不在 `NetWorkUtil.isBilibiliHost` 白名单；当时工作树里的「第三方片源」改动把 `Referer` 与 `Cookie` **一起**按白名单门控，这种直链**一个头都不带** → 403。修法：新增 `player/PlayerRequestPolicy.kt`（`BILIBILI_REFERER = "https://www.bilibili.com/"`；`isThirdPartySource(isLive,aid,cid,bilibiliHost) = !isLive && aid <= 0 && cid <= 0 && !bilibiliHost`；`buildHeaders(thirdParty,bilibiliHost,cookies,thirdPartyReferer,thirdPartyUserAgent)` —— 非第三方一律发 Referer，仅 `bilibiliHost` 且 Cookie 非空白才发 Cookie，第三方只发它自己的 `third_party_referer` / `third_party_user_agent`、拿不到任何 B 站 Referer/Cookie）；`PlayerActivity.kt:1621-1636` 的 `MPPrepare` 改调该策略，`isBilibiliHost`（`:5464-5475`）现在只决定「能不能带 Cookie」；第三方直链（无 aid/cid）跳过字幕接口，避免 JSONException 弹「数据解析错误」 | 已验证：`./gradlew.bat :app:assembleDebug` BUILD SUCCESSFUL；两 flavor 单测各 **135 suites / 1431 tests / 0 失败**（新增 `PlayerRequestPolicyTest` 8 例）。真机 `10AC9S2M4L000QL`（vivo V2229A / Android 16，coexist debug）实测：① 同一 mcdn 节点（`os=mcdn`、`r5uw39t.edge.mountaintoys.cn:4483`）现在 `onPrepared` 后正常播放，进度 00:00→00:30/08:50，`sendProgressReport` 连续上报 15s / 30s，全程无 `ijk-err`；② 对照实验（DebugBridge `http` 命令跑在应用进程内、可自定义 headers）：同一 URL 只带 `Range: bytes=0-1023` → **403**（openresty 页，150 B），补 `Referer: https://www.bilibili.com/` → **206**（1024 B，`ftypisom…avc1`）；③ 第三方直链回归（`https://www.w3schools.com/html/mov_bbb.mp4`，intent 无 aid/cid）仍正常起播到 `00:09/00:10` |
+
+| 七十 | 26.11.05：#94b 返工——缓存页排序从「七档预设菜单」改成手动拖动排序（用户指出需求本来就是缓存条目自己排序，交互照菜单设置页的长按拖动） | 上一轮 §六十八 ④ 把「选择性排序」理解成七档预设排序菜单，方向错了，本次整段重做：① `util/LocalListSort.kt` 重写——删掉 `enum Key`/`OPTION_KEYS`/`OPTION_ASCENDING`/`videoOrder`/`folderOrder` 等预设排序逻辑，只留 `normalizeKeyword`/`matches`，新增两个纯函数 `orderByStoredTitles(scanIndices, storedTitles, titleAt)`（持久化标题序优先、扫描到的漏记标题按原序补尾、重复标题只算一次）与 `mergeOrder(newOrder, previous)`（新顺序在前、旧顺序里没出现的按原序补后、过滤空标题去重）。② 新增 `util/CacheListOrderStore.kt`：未分类视频顺序存 SharedPreferences，键 `cache_list_order::<缓存根路径>`（按根目录分键，换路径/降级互不干扰），值为 JSON 数组，坏数据回落空表。③ `util/FolderManager.kt` 新增 `saveFolderOrder(orderedNames)`（按名字 rank 稳定重排 `.folders_info.json` 数组顺序，未列出的排最后）与 `saveFolderVideoOrder(folderName, orderedTitles)`（写 `VideoFolder.videoTitles`，用 `mergeOrder` 保留旧标题）。④ `util/SettingsKeys.kt` 删 `CACHE_LIST_SORT_KEY`/`CACHE_LIST_SORT_ASCENDING`。⑤ `CacheListAdapter` 删 `sortKey`/`sortAscending`/`applyViewOptions`，新增 `sortMode`、`dragCallback`（`ItemTouchHelper`，`isLongPressDragEnabled=false`，只给文件夹条目/视频条目发 `UP or DOWN`，跨分区 `onMove` 返回 false）、`setUnclassifiedOrder`、`setSearchKeyword`、`onOrderDragFinished`；`onMove` 只就地挪 `flatItems` + `notifyItemMoved`，落盘推迟到 `clearView` 里 `recyclerView.post`（与 `MenuSettingAdapter` 同因：不能在 RecyclerView 计算布局/滚动时写文件）；条目绑定改成点击/长按时才读 `selectionMode`/`sortMode`（进/退排序模式不 `notifyDataSetChanged`，避免封面 `DiskCacheStrategy.NONE` 重读闪动），顶层「未分类视频」标题清掉监听器（该 viewType 夹内复用）。⑥ `LocalListActivity`：`btnSort` 变排序模式开关（文案切「完成」，左侧 `textSelectedCount` 显示「长按条目拖动排序」），进入前先退多选、清搜索词并提示「已显示全部缓存」（排序模式不允许搜索，否则被过滤掉的条目无法表达相对位置）；`onBackPressed` 先退排序模式，进出文件夹也先退；`playVirtualCollection` 改按 `orderedVideosInFolder`（`videoTitles` 顺序）起播，虚拟合集连播顺序与列表一致；`persistOrderChange` 在主线程就地落盘（与 `FolderManager.createFolder` 同一先例）。⑦ `strings.xml` 删八条 `text_cache_sort_*`，新增 `btn_cache_sort_done`/`text_cache_sort_hint`/`msg_cache_sort_show_all`；`docs/FEATURES.md` §10.1 改写成拖动排序说明 | 已闭环（`./gradlew.bat :app:assembleDebug` BUILD SUCCESSFUL；两 flavor 单测各 135 suites / 1431 tests / 0 失败，`LocalListSortTest` 重写 15 例、新增 `CacheListOrderStoreTest` 6 例。**MuMu 模拟器实测**（x86 debug，`127.0.0.1:7555`，Android 12，1440×2560，造了 2 个文件夹 + 5 个缓存目录的夹具）：① 点「排序」→ 底栏只剩「长按条目拖动排序」+「完成」，条目点击失效；② 长按拖未分类视频换位 → 顺序即时变化，松手后 SharedPreferences 键 `cache_list_order::/storage/emulated/0/Android/media/com.RobinNotBad.BiliClient` 写入新标题序；③ 拖文件夹换位 → `.folders_info.json` 数组顺序随之改变；④ 进甲文件夹内拖动两个视频 → 该夹 `videoTitles` 变 `["甲二","甲一"]`；⑤ `am force-stop` 后经 DebugBridge 重开缓存页，三层顺序（文件夹序 / 未分类序 / 夹内序）全部保持；⑥ 非排序模式长按视频仍弹「更新弹幕 / 切换分辨率 / 移出文件夹 / 查看详情 / 删除视频」原菜单，返回键在排序模式里只退模式、不离开页面。**真机未验**（手表端长按手感需用户上手确认） |
+
+| 七十一 | 26.11.06：换源播放接入弹弹play 弹幕；「无感播放」下线、选源交互对齐 Kazumi | ① 私有侧新增 `DandanApi.kt`（`X-Auth` / `X-AppId` / `X-Timestamp` / `X-Signature`，签名 = `base64(sha256(appId + 秒级 ts + uri.path + key))`，**只签 path 不签 query**；bgmtv 映射 / 番剧详情 / 搜索 / 评论，5 分钟 TTL）、`DandanDanmaku.kt`（`fromComments` → `shield` → `mergeDuplicates`（5 秒同文合并成「文本 xN」顶部白字）→ `shift`（时间轴偏移，正数更晚）→ `toBiliXml`/`writeXml`）、`KazumiDanmaku.kt`（编排：bgm 条目精确映射优先、标题/别名搜索兜底；产物落 `cacheDir/danmaku/dandan_{episodeId}_{chConvert}_{offset}_{merge}.xml`）、`DanmakuPrefs.kt`、`DanmakuSettingsActivity.kt`（启用 / 简繁 / 偏移 ±30s / 合并 / 屏蔽规则 / 恢复默认 6 行）；`DandanDanmakuTest` 19 例。② 公共侧挂点：`PlayerActivity` 新增 `third_party_danmaku` 等 extras（置位时隐藏「发送弹幕」、跳过 B 站弹幕接口）、`applyThirdPartyDanmaku(file)`、`OptionalFeatures.attachThirdPartyDanmaku` 门面 + `FeatureHolder` 同签名转发；`app/build.gradle` 与 `build-release.yml` 增加 `DANDANAPI_APPID`/`KEY` 构建期注入（缺凭证 = 无第三方弹幕，公共侧照常）。③ `DebugBridge` 的 `extras` 支持 `int:` / `long:` / `bool:` / `float:` / `string:` 前缀。④「无感播放」下线：`BgmInfoFragment` 删掉加载时自动 `ThirdPartyResolver.resolve` 与自动填选集（选集区显式 GONE，只留常亮「播放」→ `ThirdPartySourceActivity`），`KazumiPlayActivity` 删 title-only 跨源竞速（`playFromCandidates` / `startParallelResolve` / `extractFirst`），只保留单页解析 | 已验证（`clean` + `assembleStandardDebug` 通过；`testStandardDebugUnitTest` **134 suites / 1501 tests / 0 失败**。AVD `rebili_api37_sd`（Android 17）实测四条：① DebugBridge 直起播放页带 typed extras → 日志 `bgm 条目 95225 → bangumiId=9977`、`就绪 5162 条（episodeId=99770001）`、`第三方弹幕已载入`，截图里弹幕按时间轴滚动；② 改 prefs 后重起 → 文件名变 `dandan_99770001_1_2.5_0.xml`、条数 5448，证明简繁 / 偏移 / 合并都进链路；③ BGM 95225 条目页只剩「播放」，点击开选源面板（13 源 + 末行「弹幕设置 / 弹弹play 弹幕已开启」），设置页 6 行可改（简繁转换实测生效）；④ 真实流程 DM84 → 命运之夜 无限剑制 → 第1集 → 嗅探 m3u8 → 播放页载入 5162 条弹幕。**遗留**：弹弹play 的剧集时间轴与第三方片源时间轴天然可能错位，只能靠手动偏移补；简繁转换依赖服务端 `chConvert`；凭证借用 Kazumi 的（建议自申请）；手表真机未验） |
+| 七十二 | 26.11.06：「从 26.11.02 升级到当前版本掉登录」溯源 + 凭证链返工（用户点名） | **先说结论：升级本身不清登录态**。① 26.11.02 / 26.11.06 / 26.11.06.1 三个正式包签名证书 SHA-256 完全一致（`991386eb…`）、包名一致、versionCode 单调递增 → 覆盖安装合法（排除换签名、误发共存版两类打包事故）；② `26.11.02..HEAD` 的启动与刷新链路逐字节相同；③ 全库只有 `SplashActivity.resetLogin()` 与「退出登录」会清空登录态，升级首启都不走；④ 账号代际在首启不会误判。**真正的机制（两版同源）**：`NetWorkUtil.saveCookiesLocked()` 三处缺陷 —— 收到 `SESSDATA=` 就把本地 SESSDATA 写成空串（`hasLocalSession()` 判空 → 下次冷启动清整套凭证）、属性截断只认 `"; "`、SharedPreferences 未就绪时从空串合并把 SESSDATA/DedeUserID 写丢；`CookieRefreshApi.refreshCookie()` 又与官方流程相反（新 `refresh_token` 等 confirm 成功才落盘；先 confirm 作废旧 Cookie 再校验新 Cookie）。**改法**：新增纯策略 `util/CookieJarPolicy.kt`（凭据键不接受删除/清空、属性按 `;` 切、空值不落盘、无尾随分隔符）+ `saveCookiesLocked`/`putCookie` 就绪检查 + `CookieRefreshPolicy.checkRefreshedCredentials()` + `refreshCookie` 返回 `RefreshResult{OK,RETRY,NEED_LOGIN}` 并把顺序排正为「立刻落盘新口令 → 校验新凭据 → confirm → `applyCredentials` 原子落库」+ 启动页/周期调度按三档处理并记录清空原因 + `AccountSwitchActivity` 尊重 `switchToAccount()` 返回值 | 已验证：`clean` + `assembleDebug` 双 flavor BUILD SUCCESSFUL；两 flavor 单测各 **149 suites / 1600 tests / 0 失败**（新增 `CookieJarPolicyTest` 19 例，`CookieRefreshPolicyTest` 扩到 18 例）；AVD `rebili_api37_sd` 注入假登录态冷启动：服务端 -101 后本地凭证一条没少、无「清空登录态」日志、追加的 `b_nut` 以干净格式并入、启动正常进推荐页。遗留：真实登录态下「刷新成功换发新 SESSDATA」无账号可复现，靠文档语义 + 纯函数单测兜住 |
+| 七十三 | 26.11.06：兄弟分支移植批次 1（13 项 S 级 + 2 项 release 日志补漏） | **① 播放器域**：playurl 双接口兜底（WBI→legacy、pgc v2→v1；失败请求不再占 10 分钟缓存）；音频焦点（起播/恢复 request，LOSS/LOSS_TRANSIENT 暂停且不自动续播，暂停/播完/报错/onDestroy abandon，后台播放保留焦点）；弹幕数量保护（`stat.danmaku` 先查、>5000 不自动加载、弹幕按钮强制加载、旧 XML 流式计数）；「强制为滚动弹幕」死开关接线（`ForceScrollParser`，含实时插入弹幕）；直播弹幕停留倍率（1.0–3.0，默认 2.0）；短视频无极调音（软件增益复用 `KEY_GAIN_PERCENT`）。新增 7 个策略类：`PlayUrlFallbackPolicy` / `AudioFocusPolicy` / `DanmakuLoadPolicy` / `DanmakuStylePolicy` / `LiveDanmakuFactorPolicy` / `DanmakuXmlCounter` / `ForceScrollParser`。**② 社交域**：私信表情（新增 `BUSINESS_IM` + 空面板回落 reply + 光标处插入表情码，渲染侧原本就绪）；性别/IP 属地（`x/space/wbi/acc/info` 同一次请求解析，`UserInfo` Parcelable 末尾同序追加 `sex`/`ipLocation`/`mutualFollow` + `serialVersionUID`，用户主页头部展示、保密/空值整行隐藏）；互关徽章（`attribute == 6`，仅本人关注/粉丝/分组列表显示）；历史记录多选删除（单批 100、全选/计数、失败如实汇总）。**③ 存储/设置/工具**：存储空间页（图片缓存/临时/更新包/可用空间统计 + 白名单清理；与 cacheDir 重叠的受保护根会让整棵 cacheDir 跳过，绝不删下载目录与正在播放的弹幕文件）；`UpdateManager` 检查更新 client 加 `callTimeout(20s)`（下载不受影响）；移动数据/Wi-Fi 独立默认画质（`NetworkPlaybackQuality.defaultQn(context)`，统一 `PlayerActivity`/`JumpToPlayerActivity`/`VideoInfo`/`ShortVideoFeedApi` 共 5 处读取点）；`FileUtil.readString` 改 try-with-resources；`SharedPreferencesUtil` 五个 getter 加 `ClassCastException` 保险丝；`SettingsIndex` 补 3 条搜索项。**④ 日志补漏**：动态卡片评论入口 + 评论数（`DynamicCommentText` 万/亿缩写；`DynamicApi` 解析 `module_stat.comment.count`，顺带修「动态详情页评论数恒为 0」）；视频详情争议信息判空（`parseArgueMsg` + 同文件 `ugc_season.stat`/`pages[].part`/联合投稿 `staff` 等安全 opt 化） | **已验证**：`./gradlew.bat :app:assembleDebug` BUILD SUCCESSFUL（双 flavor）；两 flavor 单测各 **164 suites / 1719 tests / 0 失败**（本批新增约 90 例：player 48、storage 25、social 4 类、dynamic 2 类）。**模拟器 emulator-5554（Android 17 x86_64，standard debug 包）实测**：① 存储空间页正常渲染（占用情况/可用空间/三个清理按钮/「不会删已缓存内容」说明）；② 清晰度页 Wi-Fi 子页选 720P 后回写成功（prefs `play_qn_wifi=64`，行文案变「当前：720P」）；③ 内置播放器设置新增三项都在（弹幕数量保护默认开、强制为滚动弹幕可开关并落盘 `player_danmaku_forceR2L=true`、直播弹幕停留倍率 2.0x）；④ `PlayerActivity` 用本地视频起播，日志出现 `AudioManager ... requestAudioFocus()` 弃用警告（证明焦点请求真的发出），无崩溃。**未验证**（模拟器本轮被并行会话反复抢占 + 部分页面需登录态/数据）：来电/抢音的焦点丢失路径、>5000 弹幕视频的抑制与强制加载、直播倍率观感、短视频音量与长视频存档互通、番剧 v2 回退日志、动态评论入口/性别属地/互关徽章/私信表情的界面。**遗留**：评论入口走非 ForResult 的 `TerminalContext.enterDynamicDetailPage`，从评论入口进详情后删/改返回列表不自动刷新（下拉刷新可解；后续给 ForResult 版加 `seekReply` 重载）；历史多选删除「长按松手是否顺带触发一次点击」待真机确认（`HistoryVideoCardAdapter` 不在本批 scope）；多选面板用了 `TerminalDialog.Sheet`（internal，同模块可用），建议下批收进 TerminalDialog 作为第五种形态；`SharedPreferences` 保险丝会把类型写错静默降级为默认值，必要时加日志；音频焦点用 API26 已废弃接口（minSdk 19 下刻意保留，编译有 deprecation 警告） |
+| 七十四 | 26.11.06：兄弟分支移植批次 2（10 项 M 级） | **① 播放核心**：MediaSession 隔离（minSdk 19 类加载崩溃隐患：`PlayerActivity.kt` 字段与辅助函数改 `Any?`，四个入口先 SDK 守卫再局部 `as? MediaSession`，`onDestroy` 整段进 `SDK>=21`）；连播队列（新 `player/PlayQueue.kt`：5 来源 SINGLE/UPLOADER/COLLECTION/FAVORITE/LOCAL_CACHE × 4 模式 顺序/倒序/随机/单曲，确定性洗牌 + 历史栈 64、行式 token 编解码；`activity_player.xml` 加连播按钮；媒体键、耳机切歌、自动连播、换 P 全部走队列；token 落盘重启可恢复，与虚拟合集共存）；播放会话哨兵（新 `player/PlaySessionStore.kt`，15s 节流 + 生命周期落盘、`PLAYSESSION1` 编解码；`PlayerApi.buildResumeIntent` + 主菜单「继续播放」，5 秒/7 天/直播三重过滤）；番剧每集进度（新 `player/BangumiProgressStore.kt`，epid 维度、上限 128、看完标完成；`PlayerApi.getBangumi` 用本地进度覆盖服务端）；`DeviceProfile` 三处接线（默认清晰度上限 / 弹幕行数上限 / 低端机软解）。**② 弹幕内核**：`DanmakuStreamLoader` 360 秒分段窗口（前后各 2 段、首屏 3 段并发、单串行 worker、15s 失败退避、最多 4 轮）+ `DanmakuDiskCache`（`cacheDir/danmaku_cache`、LRU、默认 64MB / 上限 128MB、tmp+fsync+rename 原子写）+ `DanmakuManager.appendSegments` 待灌队列 + 设置页「弹幕缓存上限」档位；窗口加载失败回退整段接口。**③ 评论域**：`ReplyFetchPolicy` 三层兜底（rpid 跨页去重 → `LocalReplyCache` 补回刚发的评论 → 换评论类型重拉）+ `ReplyStateStore`（512 条 LRU，点赞/点踩/删除跨页同步，不写盘）；`ReplyFragment` / `ReplyInfoActivity` / `ReplyAdapter` 接线。**④ 收藏与历史**：夹内搜索（`FavoriteApi.getFolderVideosNew` 带服务端 keyword，可与 order 同用）、历史搜索（客户端过滤 + 「仅本页已加载 N 条」提示）、「全部收藏」聚合（`FavoriteAggregatePolicy.merge` 本地合并各夹首页）、批量下载（`FavoriteBatchDownloadPolicy`，单批 20 条）。**⑤ 大图**：`ImageTilePolicy` + `ui/widget/BigImageView.kt`（256×256 分块、只解码可见块、预取半屏、6MB 块缓存、连续 4 块失败回退整图降采样）+ `ImageViewerActivity` 重写（每页 PhotoView / BigImageView 二选一） | 已验证：`assembleDebug` 成功（两 flavor 共 8 个 APK）；两 flavor 单测各 **174 suites / 1867 tests / 0 失败**（批次 1 为 1719，本批 +148；首轮 2 例失败经核实为测试断言写错，改断言后全绿）。AVD `rebili_api37_sd`（Android 17，匿名态真视频 aid=117566290790345 / cid=43364712790）实测：① 弹幕窗口 `起始窗口已加载：segments=1..3 非空=3/3 条数=1698`，`cache/danmaku_cache/dm_43364712790_{1,2,3}.bin` 生成；② 队列 token 落盘 `PLAYQUEUE1 collection sequential …`（7 项多 P）；③ 会话哨兵 `PLAYSESSION1 … 13662 3141099 collection 0 1 … 第一局`，onStop 与销毁兜底各落一次；④ 主菜单「继续播放」出现并点通：`buildResumeIntent progress=226678` → 跳转页取流后补回 → `onPrepared 进度跳转>226678` → 会话写回 240532ms，确认真的续播。**修掉两个真 bug**：`buildResumeIntent` 把毫秒除以 1000（`PlayerData.progress` 全仓单位是毫秒，除完变 13ms ≈ 从头播）；`PlayerApi.getVideo/getBangumi` 会用服务端 `last_play_time` 覆盖 `playerData.progress`（匿名态归零），跳转页现按 `resume_progress_ms` extra 在取流后补回。**未验证**（需登录态）：评论三层兜底与跨页同步、收藏夹搜索 / 全部收藏 / 批量下载、历史搜索、大图分块真实长图、番剧每集进度。**遗留**：从「继续播放」进入时 `restoreQueueTokenIfMatches` 因分 P 列表尚未加载（7 vs 0）丢弃 token，「下一个」按钮暂无队列（安全阀按设计生效，可后续在分 P 就绪后二次恢复） |
+| 七十五 | 26.11.06：兄弟分支移植批次 3（S 清单 1–10 + 主题背景图 + Wi-Fi/移动数据分辨率复核） | **① 崩溃与接口健壮性**：`CatchActivity.kt` 的 `setSpan` 结束下标改成 `minOf(8, length)`（崩溃原因短于 8 字原来直接越界崩溃）；`RankingApi.java` 整段改 `opt*` 安全取值并跳过空卡；写评论页楼中楼隐藏图片入口（B 站楼中楼不支持带图，原来选完图才失败）。**② 播放器**：片头片尾五档（关闭/仅片头/仅片尾/都跳/询问我，老布尔自动迁移，询问档只问一次且绝不自动 seek，`SkipOpEdPolicy`/`SkipOpEdPrefs`）；点带时间的弹幕跳转（`DanmakuTimestampPolicy`，拒绝 1080p/1:2/99:99 这类假时间）；长按上下划切视频（`LongPressSwitchPolicy`，0.18 屏高阈值 + 横向容差，命中先结束倍速）；长按倍速提示尺寸四档（80/100/120/150%）；本人弹幕边框（vendored `DanmakuFlameMaster` 的 `BaseDanmaku.borderColor` 去 final、解析器补 `userHash`，按登录 mid 的 CRC32 比对，`DanmakuSelfStylePolicy`，未登录不加框）。**③ 数据域**：推荐页翻页游标（`RecommendPagePolicy` + `RecommendApi` 的 ps/fresh_idx，实测 fresh_idx 为真游标、brush 无效；bvid 去重 + 代数判据防旧请求覆盖）；定时发布自定义时间 + 6 分钟~7 天校验（`ScheduleTimePolicy`）。**④ 外观**：主题背景图（`BackgroundImage`，私有目录拷贝、16MB/8192px 上限、≤1024 采样、填充/适应、0/25/50/75% 遮罩）+ 与弥散光晕叠加（`AmbientGlow.createOverlayDrawable` + `ColorScheme` 的 LayerDrawable 半透明层）；**values-night 不加**：我方外观是手动两态（`ColorMode.applyGlobal` 强制覆盖 uiMode，`values-notnight` 已覆盖亮色），系统夜间位无表达力。**⑤ 清晰度分档复核**：起播四入口（PlayerActivity/JumpToPlayerActivity/VideoInfo/短视频）均已走 `NetworkPlaybackQuality.defaultQn`，补齐选择播放器页摘要；下载链与直播不走分档（直播 qn 写死在 `TerminalContext`）。**⑥ 验证**：`assembleDebug` 成功；两 flavor 各 182 suites / 1969 tests / 0 失败；模拟器实测片头片尾五档落盘 `player_skip_op_ed_mode=4`、本人弹幕边框开关、外观页背景图选择/清除/适配/遮罩、背景图重启后仍在（1091926B）且渲染生效、光晕叠加 A/B 像素证据、推荐页下滑出新内容。**未验证（需登录或人工操作）**：点弹幕跳转、长按划动切视频、询问档弹窗、大图分块渲染、评论/收藏/历史域。 |
+
+| 七十六 | 26.11.06：「跳到指定时间」输入框打开时按当前位置预填（用户点名） | 新增纯函数 `PlayerJumpTimePolicy.prefillText(positionMs)`（`<=0` → null；`mm:ss`，超一小时 `h:mm:ss`，固定 `Locale.US` 保证能被 `parseToSeconds` 解回来）；`initJumpToTimeButton()` 传 `initial_text`，位置取 `video_now`（seek 未落地时 `currentPosition` 还是旧值）；`InputDialogActivity` 不改，光标照旧落在末尾（初版做过整串选中，当天按用户意见撤回）。文档同步 `FEATURES.md` 精确空降条目与 `update_log_current` 第 7 条 | 已闭环（单测 `PlayerJumpTimePolicyTest` 15 例含 round-trip；双 flavor `assembleDebug` 通过，两 flavor 单测各 186 suites / 2011 tests / 0 失败；AVD `rebili_api37_sd` 实测：`00:03` 时打开弹窗预填 `00:03`、确定后进度 `00:49/02:34`，播完（`02:34/02:34`）再打开仍是空框；撤回整串选中后按用户要求未重跑，真手表未验） |
 
 ## 5. 仍待回迁 / 仅见于归档的长期结论
 
@@ -1065,3 +1556,4 @@
 - **WAL 模式下备份必须用 `sqlite3 .backup`，不能 `cp`**（最近写入还在 `-wal` 里，直接拷会丢数据）。§42.7
 - **PowerShell 传 JSON 的坑**：`curl.exe --data-raw '{"title":"中文…"}'` 含中文时会被 Windows 控制台代码页搞坏 → 服务端 `json.loads` 失败 → `read_json` 返回 `{}` → 报「标题和正文都不能为空」。正确姿势：**把请求体写成无 BOM 的 UTF-8 文件，再用 `--data-binary @file`**。§42.8
 - **`update_log_current` 是当版日志的单一真相**（关于页读它、`:app:verifyVersionConsistency` 拿它当锚点），不引入第二份需要维护的文案。§40.3
+- **播放请求头必须「Referer 与 Cookie 分开判」**：Referer 是 CDN 防盗链要求（缺了 403 → IJK `-10000`），Cookie 是登录凭证。任何「按 host 白名单一起门控请求头」的写法都会打在 B 站自己的 PCDN 节点上（`*.edge.mountaintoys.cn:4483`，`os=mcdn`，host 不在 `isBilibiliHost` 白名单，但 URL 自带 `upsig`、不需要 Cookie）；正确判据是**内容来源**——B 站入口一律发 Referer，第三方只发它自己声明的 Referer/UA，Cookie 只给 `isBilibiliHost`。§六十九

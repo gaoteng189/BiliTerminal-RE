@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import androidx.lifecycle.Lifecycle
 import com.RobinNotBad.BiliClient.BiliTerminal
 import com.RobinNotBad.BiliClient.R
+import com.RobinNotBad.BiliClient.api.PlayerApi
 import com.RobinNotBad.BiliClient.activity.base.BaseActivity
 import com.RobinNotBad.BiliClient.activity.base.InstanceActivity
 import com.RobinNotBad.BiliClient.activity.dynamic.DynamicActivity
@@ -111,6 +112,12 @@ class MenuActivity : BaseActivity() {
 
         var btnList: MutableList<String> = SharedPreferencesUtil.loadMenuEnabled().toMutableList()
 
+        // 会话哨兵：上次有没看完的视频时，主页顶部给一个「继续播放」入口。
+        // 这里刻意不做「一启动就续播」——手表上打开应用往往是想去别处，被播放器抢前台很烦；
+        // 菜单项既不打扰又比藏在二级页好找。会话在 PlayerApi.buildResumeIntent 里做过期/过短过滤。
+        val resumeIntent: Intent? = PlayerApi.buildResumeIntent(this)
+        if (resumeIntent != null) btnList.add(0, "resume")
+
         if (SharedPreferencesUtil.getLong(SharedPreferencesUtil.mid, 0) == 0L) {
             btnList.add(0, "login")
             btnList.remove("dynamic")
@@ -125,6 +132,8 @@ class MenuActivity : BaseActivity() {
             val materialButton = MaterialButton(this)
             when (btn) {
                 "login" -> materialButton.text = UiText.of("登录")
+                MenuConfig.EXIT -> materialButton.text = getString(R.string.btn_exit)
+                "resume" -> materialButton.text = getString(R.string.player_queue_resume_last)
                 "dynamic" -> {
                     var btnText = btnNames[btn]!!.first
                     if (btn == "dynamic") {
@@ -147,17 +156,20 @@ class MenuActivity : BaseActivity() {
                 }
                 else -> materialButton.text = btnNames[btn]!!.first
             }
-            materialButton.setOnClickListener { killAndJump(btn) }
+            // 「退出」是动作项：点了直接收摊，不走 killAndJump（它要往页面栈里跳）
+            // 「继续播放」也是动作项：拉起上次的会话后收掉主页，语义同 killAndJump 的主页切换
+            materialButton.setOnClickListener {
+                when {
+                    btn == MenuConfig.EXIT -> exitAppCompletely()
+                    btn == "resume" -> {
+                        if (resumeIntent != null) startActivity(resumeIntent)
+                        finish()
+                    }
+                    else -> killAndJump(btn)
+                }
+            }
             layout.addView(materialButton, params)
         }
-
-        // 「退出」固定按钮：不放进 btnNames——菜单项受「菜单设置」管控且点了要跳页，
-        // 退出是常驻入口、点了直接收摊，固定排在菜单最下方（desc_back_disable 的文案
-        // 也一直写着"菜单最下方的退出按钮"）。手表上没有其他彻底收摊的入口，这里补上。
-        val exitButton = MaterialButton(this)
-        exitButton.text = getString(R.string.btn_exit)
-        exitButton.setOnClickListener { exitAppCompletely() }
-        layout.addView(exitButton, params)
 
         Log.e("debug", "MenuActivity onCreate in: ${System.currentTimeMillis() - time}")
     }

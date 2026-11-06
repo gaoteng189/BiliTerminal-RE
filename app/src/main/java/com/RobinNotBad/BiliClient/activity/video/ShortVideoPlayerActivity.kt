@@ -52,6 +52,8 @@ import com.RobinNotBad.BiliClient.player.DanmakuManager
 import com.RobinNotBad.BiliClient.player.PlayerDefaults
 import com.RobinNotBad.BiliClient.player.IjkOption
 import com.RobinNotBad.BiliClient.player.IjkPlayerBridge
+import com.RobinNotBad.BiliClient.player.PlayerState
+import com.RobinNotBad.BiliClient.player.PlayerVolumePolicy
 import com.bumptech.glide.Glide
 import master.flame.danmaku.ui.widget.DanmakuView
 import kotlinx.coroutines.CoroutineScope
@@ -85,6 +87,15 @@ class ShortVideoPlayerActivity : InstanceActivity() {
     var screenWidth = 0
     var screenHeight = 0
     internal var isBottomControlVisible = true
+
+    /**
+     * 本页当前是否在前台（start 之后、stop 之前）。
+     *
+     * 保亮屏判据之一：只有前台才允许挂 [WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON]。
+     * 少了这道闸，后台里任意一次 `isPlaying = true`（例如 prepare 完成时页面其实已经不可见）
+     * 都会把标志加回已经 stop 的窗口，屏幕上长期「亮着」却没有任何画面。
+     */
+    private var isForeground = false
 
     /**
      * 弹幕开关（反馈 #55，原先每个 PageHolder 写死 true，设置里的「播放默认值 → 弹幕」不生效）。
@@ -167,17 +178,33 @@ class ShortVideoPlayerActivity : InstanceActivity() {
         windowManager.defaultDisplay.getMetrics(metrics)
         screenWidth = metrics.widthPixels
         screenHeight = metrics.heightPixels
+        // 可用区域变了：各页按新尺寸重算画面大小与亮屏判据。
+        // 原先 `notifyScreenSizeChanged()` 全仓无调用点，旋转/边距变化后画面会停在旧尺寸。
+        if (::shellAdapter.isInitialized) {
+            shellAdapter.activeFeedFragment?.onHostScreenSizeChanged()
+        }
+        syncKeepScreenOn()
     }
 
     override fun onStart() {
         super.onStart()
+        isForeground = true
         // 回到前台重算一次：后台期间可能已经暂停过，别把上一次的亮屏状态带回来
+        syncKeepScreenOn()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Fragment 的 onResume（→ resumeCurrent）在 super.onResume() 里已经跑完，
+        // 此时「回前台自动续播」已经把 isPlaying 置真；onStart 里那次算早一步，
+        // 单靠它会出现「回到前台画面已经在播、亮屏标志却没加回来」的窗口。
         syncKeepScreenOn()
     }
 
     override fun onStop() {
         // 进后台一律交还亮屏权：Fragment 的 onPause 走 pauseCurrent() 也会清，
         // 但那条路依赖「活跃页引用还在」，这里再加一道兜底，避免窗口不可见却挂着标志。
+        isForeground = false
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         super.onStop()
     }
@@ -244,11 +271,17 @@ class ShortVideoPlayerActivity : InstanceActivity() {
      *
      * 每次播放状态变化都**整体重算**而不是增量开关：增量写法在
      * `releasePlayer()` 这类「本来就没在播」的路径上会漏掉，残留一次就是永久亮屏。
+     *
+     * **必须再叠一道前台判据**：判据链要穿过 `shellAdapter → activeFeedFragment →
+     * PageHolder` 四层，任何一层为空都会算成「没在播」；反过来，页面不可见时
+     * prepare 完成也会把 `isPlaying` 置真（Fragment 的 onPause 只暂停当前条目，
+     * 不保证晚到的 prepare 回调不会重新起播），那时若无条件 `addFlags`，
+     * 就会给一个已经 stop 的窗口挂上永久亮屏。
      */
     internal fun syncKeepScreenOn() {
         if (isFinishing || isDestroyed) return
         if (!::shellAdapter.isInitialized) return
-        val keep = shellAdapter.activeFeedFragment?.isCurrentPlaying() == true
+        val keep = isForeground && shellAdapter.activeFeedFragment?.isCurrentPlaying() == true
         if (keep) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
@@ -374,7 +407,7 @@ class ShortVideoPagerAdapter(
         activeHolder?.let { if (it !== holder) it.setActive(false) }
         activeHolder = holder
         holder.setActive(true)
-        holder.setupPlayer(activity.screenWidth, activity.screenHeight)
+        holder.setupPlayer()
     }
 
     fun playAtPosition(position: Int) {
@@ -414,15 +447,24 @@ class ShortVideoPagerAdapter(
         lastVisiblePosition = -1
     }
 
-    fun notifyScreenSizeChanged(width: Int, height: Int) {
-        holders.values.forEach { it.updateVideoSize(width, height) }
+    /**
+     * 可用区域尺寸变了（旋转 / 界面边距 / 圆屏留白）：让各页按新尺寸重摆画面。
+     *
+     * 原先这个方法没有任何调用方，转屏后画面会停在旧尺寸；现在由
+     * `ShortVideoPlayerActivity.onConfigurationChanged` → `ShortVideoFeedFragment`
+     * 转过来。尺寸本身从 `playerBridge.state` 现取，不需要参数。
+     */
+    fun notifyScreenSizeChanged() {
+        holders.values.forEach { it.updateVideoSize() }
     }
 
     // itemView.setOnTouchListener 改为在 init 里只设置一次，抑制注解随之上移到类上
     @Suppress("ClickableViewAccessibility")
     inner class PageHolder(
         itemView: View,
-        private val audioManager: AudioManager,
+        // 短视频音量已改走 ijk 软件增益（无极调音），不再需要系统 AudioManager。
+        // 参数保留是为了不动上层 ShortVideoFeedFragment 的构造链（该文件不属于本次改动范围）。
+        @Suppress("UNUSED_PARAMETER") audioManager: AudioManager,
         private val activity: ShortVideoPlayerActivity
     ) : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
 
@@ -481,8 +523,16 @@ class ShortVideoPagerAdapter(
         private var danmakuView: DanmakuView? = null
         private var danmakuManager: DanmakuManager? = null
         private var currentItem: ShortVideoItem? = null
+        // 视频真实尺寸（已按旋转角交换宽高）。0 表示还没拿到。
         private var videoWidth = 0
         private var videoHeight = 0
+        // 已经摆到 TextureView 上的尺寸（去重用）：state 每 250ms 都会更新一次，
+        // 不去重就会在每个采样周期都改一遍 layoutParams。
+        private var appliedVideoWidth = 0
+        private var appliedVideoHeight = 0
+        // 拿不到尺寸时的退化宽高比（优先沿用上一条有效比例，其次 16:9）。
+        // 绝不能让 TextureView 停在 MATCH_PARENT：那等于把画面硬拉满整屏。
+        private var fallbackRatio = ShortVideoLayoutMath.DEFAULT_RATIO
         private var videoAll = 0
         // 主线程在 state.collect 里写、弹幕渲染线程在位置回调里读，必须 volatile，
         // 否则弹幕线程可能读到撕裂或过期的毫秒值。这里是"内存值"，
@@ -544,6 +594,19 @@ class ShortVideoPagerAdapter(
         private val mainHandler = Handler(Looper.getMainLooper())
         private var hideBottomRunnable: Runnable? = null
         private var hideVolumeRunnable: Runnable? = null
+
+        /**
+         * 「无极调音」的软件增益百分比（0–100），与长视频共用同一个存档键。
+         *
+         * 短视频原先调的是**系统媒体音量**（`setStreamVolume` ±1 档），手表上只有很少几档，
+         * 20% 一下跳到 33% 调不出细档；这里改走 ijk 的采样级增益，1% 一档，且与长视频手感一致。
+         */
+        private var volumeGainPercent: Int = PlayerVolumePolicy.sanitize(
+            SharedPreferencesUtil.getInt(
+                PlayerVolumePolicy.KEY_GAIN_PERCENT,
+                PlayerVolumePolicy.DEFAULT_PERCENT
+            )
+        )
 
         private var gestureDetector: GestureDetector? = null
         private var scaleGestureDetector: ScaleGestureDetector? = null
@@ -709,6 +772,15 @@ class ShortVideoPagerAdapter(
             // 先装一次，之后每次 onBindViewHolder 由 [syncDisguiseGesture] 重算（开关可能被关掉）。
             syncDisguiseGesture()
 
+            // 可用区域尺寸变化后重摆画面：`adjustVideoSize()` 在区域还是 0 时会早退，
+            // 而 prepare 往往早于本页完成布局（尤其是慢机型），只在 onPrepared 算一次会
+            // 让 TextureView 留在 MATCH_PARENT（满屏拉伸）。
+            itemView.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) {
+                    adjustVideoSize()
+                }
+            }
+
             initBottomButtons()
         }
 
@@ -836,22 +908,46 @@ class ShortVideoPagerAdapter(
             }
         }
 
+        /**
+         * 音量键/按钮：调「无极调音」的软件增益（0–100%），不再动系统媒体音量。
+         *
+         * 0% 是真静音（采样乘 0），再按 + 从 0 恢复；静音/恢复语义与长视频播放器完全一致。
+         * 手表系统媒体音量只有很少几档，软件增益是 1% 一档，才调得出 30% 这种档位。
+         */
         private fun changeVolume(addOrCut: Boolean) {
-            var volumeNow = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-            val volumeMax = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-            val volumeNew = volumeNow + if (addOrCut) 1 else -1
-            if (volumeNew in 0..volumeMax) {
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeNew, 0)
-                volumeNow = volumeNew
-            }
-            val show = (volumeNow.toFloat() / volumeMax.toFloat() * 100).toInt()
+            val next = PlayerVolumePolicy.step(
+                volumeGainPercent,
+                if (addOrCut) 1 else -1,
+                PlayerVolumePolicy.COARSE_STEP_PERCENT
+            )
+            applyVolumeGain(next)
+            // 与长视频共用存档键：在短视频里调完，回到长视频播放器也是同一档
+            SharedPreferencesUtil.putInt(PlayerVolumePolicy.KEY_GAIN_PERCENT, next)
 
             showSound.visibility = View.VISIBLE
-            showSound.text = "音量：$show%"
+            showSound.text = activity.getString(R.string.player_port_volume_percent, next)
 
             hideVolumeRunnable?.let { mainHandler.removeCallbacks(it) }
             hideVolumeRunnable = Runnable { showSound.visibility = View.GONE }
             mainHandler.postDelayed(hideVolumeRunnable!!, 3000)
+        }
+
+        /** 把 [percent] 打到当前播放器的软件增益上，并记到本页字段。 */
+        private fun applyVolumeGain(percent: Int) {
+            volumeGainPercent = PlayerVolumePolicy.clampPercent(percent)
+            val gain = PlayerVolumePolicy.percentToGain(volumeGainPercent)
+            playerBridge.setVolume(gain, gain)
+        }
+
+        /** 起播时把存档增益打到新播放器上（每个分页 holder 各自一份播放器）。 */
+        private fun applyStoredVolumeGain() {
+            volumeGainPercent = PlayerVolumePolicy.sanitize(
+                SharedPreferencesUtil.getInt(
+                    PlayerVolumePolicy.KEY_GAIN_PERCENT,
+                    PlayerVolumePolicy.DEFAULT_PERCENT
+                )
+            )
+            applyVolumeGain(volumeGainPercent)
         }
 
         private fun applyScale() {
@@ -897,27 +993,30 @@ class ShortVideoPagerAdapter(
             hideBottomRunnable = null
         }
 
-        fun setupPlayer(screenW: Int, screenH: Int) {
+        fun setupPlayer() {
             val item = currentItem ?: return
             if (item.videoUrl.isEmpty()) {
                 CenterThreadPool.run {
                     val success = ShortVideoFeedApi.fetchVideoUrl(item)
                     mainHandler.post {
                         if (success && item.videoUrl.isNotEmpty()) {
-                            initPlayer(item, screenW, screenH)
+                            initPlayer(item)
                         } else {
                             lastBufferingVisible = false
                             bufferingIndicator.visibility = View.GONE
+                            // 这一页根本没起来：isPlaying 是「保持亮屏」的判据，
+                            // 留着上一次的 true 会让窗口挂着 KEEP_SCREEN_ON 却什么都没有。
+                            isPlaying = false
                             MsgUtil.showMsg(UiText.of("加载视频失败"))
                         }
                     }
                 }
             } else {
-                initPlayer(item, screenW, screenH)
+                initPlayer(item)
             }
         }
 
-        private fun initPlayer(item: ShortVideoItem, screenW: Int, screenH: Int) {
+        private fun initPlayer(item: ShortVideoItem) {
             if (playerReady) return
 
             // 与 lastBufferingVisible 同步，避免状态收集因“值相同”而不再纠正可见性
@@ -932,6 +1031,7 @@ class ShortVideoPagerAdapter(
                 if (!playerBridge.createPlayer(activity, shortVideoOptions)) {
                     lastBufferingVisible = false
                     bufferingIndicator.visibility = View.GONE
+                    isPlaying = false
                     MsgUtil.showMsgLong(activity.getString(R.string.msg_ijk_native_load_failed))
                     return
                 }
@@ -985,8 +1085,6 @@ class ShortVideoPagerAdapter(
                 playerBridge.setOnPrepared {
                     isPrepared = true
                     val st = playerBridge.state.value
-                    videoWidth = st.videoWidth
-                    videoHeight = st.videoHeight
                     videoAll = st.duration.toInt()
                     progressStr = StringUtil.toTime(videoAll / 1000)
                     // 换了视频要复位进度去重标记，否则新视频的文本要等整秒变化才刷新
@@ -999,8 +1097,12 @@ class ShortVideoPagerAdapter(
                     coverImage.visibility = View.GONE
                     playIcon.visibility = View.GONE
 
-                    adjustVideoSize(screenW, screenH)
+                    // 尺寸从 state 现取（含旋转角）：prepare 时容器元数据没带分辨率的话，
+                    // 这里会先按退化比例摆好，等 setOnVideoSizeChanged 补上尺寸再纠正。
+                    applyVideoSizeFromState(st)
                     applySpeedToPlayers(currentSpeed)
+                    // 无极调音：新播放器要套用存档增益（换页/回收重建都走这里）
+                    applyStoredVolumeGain()
 
                     // 只有当前页面活跃时才自动播放，防止弱网延迟准备导致两个视频同时播放
                     if (isActive) {
@@ -1046,6 +1148,7 @@ class ShortVideoPagerAdapter(
                 Logu.e("ShortVideo", "Player init error: ${e.message}")
                 lastBufferingVisible = false
                 bufferingIndicator.visibility = View.GONE
+                isPlaying = false
                 MsgUtil.showMsg(UiText.of("播放器初始化失败"))
             }
         }
@@ -1140,56 +1243,102 @@ class ShortVideoPagerAdapter(
                             }
                         }
                     }
+                    // 尺寸晚到 / 中途变化（旋转信息后到、换分辨率、onPrepared 时为 0）：
+                    // 把 state 当唯一数据源，真正变化时重摆画面。这是「画面被拉伸铺满整屏」
+                    // 的兜底 —— 以前 state 里的尺寸更新没有任何消费者。
+                    applyVideoSizeFromState(st)
+                    // 真值兜底：isPlaying 是「保持亮屏」的判据，必须跟播放器实际状态对齐。
+                    // 只靠各处显式赋值会漏（例如 start() 被调用但播放器已经自己停了）。
+                    val realPlaying = playerBridge.isPlaying
+                    if (realPlaying != isPlaying) isPlaying = realPlaying
                 }
             }
         }
 
-        private fun adjustVideoSize(screenW: Int, screenH: Int) {
-            if (videoWidth == 0 || videoHeight == 0) return
-            val params = textureView?.layoutParams as? FrameLayout.LayoutParams ?: return
+        /**
+         * 按 `playerBridge.state` 里的视频尺寸重摆画面（幂等，可反复调用）。
+         *
+         * 以前只在 `onPrepared` 里读一次尺寸：容器元数据没带分辨率（`probesize` / `analyzeduration`
+         * 压得很小、非 MP4 流）时 `videoWidth/videoHeight` 为 0，`adjustVideoSize()` 静默早退，
+         * TextureView 就留在 `MATCH_PARENT` —— 用户看到的就是「画面被强行拉伸铺满整屏」。
+         * 而 `IjkPlayerBridge` 的 `setOnVideoSizeChangedListener` 虽然会更新 state，
+         * mediacodec 路径下却基本不会再补发尺寸，所以这里**必须**把 state 当唯一数据源，
+         * 播放期间每轮采样都检查一次（真正变化才重摆）。
+         *
+         * 旋转 90/270 时交换宽高：容器给的是未旋转尺寸，解码器出的是旋转后的帧
+         * （`mediacodec-auto-rotate=1` + `ffpipenode_android_mediacodec_vdec.c` 的
+         * `frame_rotate_degrees` 分支），不交换同样表现为「比例被拉伸」。
+         */
+        private fun applyVideoSizeFromState(st: PlayerState) {
+            val rotated = ShortVideoLayoutMath.swapsWidthHeight(st.rotationDegrees)
+            val width = if (rotated) st.videoHeight else st.videoWidth
+            val height = if (rotated) st.videoWidth else st.videoHeight
+            val known = width > 0 && height > 0
+            if (known) fallbackRatio = width.toFloat() / height.toFloat()
 
-            // 视频可用的实际区域：itemView 已布局时用实测尺寸（含界面边距/系统栏），
-            // 还没量出来就用 BaseActivity 算好的内容区尺寸。
-            // 不能用整屏尺寸：开了界面边距/圆屏后内容区比整屏小，画面会被裁掉一截。
+            if (known) {
+                videoWidth = width
+                videoHeight = height
+                if (width == appliedVideoWidth && height == appliedVideoHeight) return
+                appliedVideoWidth = width
+                appliedVideoHeight = height
+                Logu.v(
+                    "ShortVideo",
+                    "画面尺寸: ${width}x$height（旋转 ${st.rotationDegrees}°，" +
+                        "区域 ${itemView.width}x${itemView.height}）"
+                )
+            } else {
+                // 尺寸确实未知：先用退化比例占位，别把画面拉满整屏；
+                // 尺寸晚到时下一轮采样会再进来纠正。
+                videoWidth = 0
+                videoHeight = 0
+                appliedVideoWidth = 0
+                appliedVideoHeight = 0
+            }
+            adjustVideoSize()
+        }
+
+        /**
+         * 按当前 [videoWidth]/[videoHeight]（未知时按 [fallbackRatio]）在可用区域内等比居中。
+         *
+         * 可用区域优先取 `itemView` 实测尺寸（含界面边距/系统栏），还没量出来就用
+         * BaseActivity 算好的内容区尺寸；不能用整屏尺寸，否则开了界面边距/圆屏后画面会被裁。
+         */
+        private fun adjustVideoSize() {
+            val texture = textureView ?: return
+            val params = texture.layoutParams as? FrameLayout.LayoutParams ?: return
+
             val areaW = if (itemView.width > 0) itemView.width else activity.contentWidth
             val areaH = if (itemView.height > 0) itemView.height else activity.contentHeight
             if (areaW <= 0 || areaH <= 0) return
 
-            if (activity.roundAdapted) {
-                // 圆屏：取视频在圆形屏幕里的内接矩形（公式与 PlayerActivity.changeVideoSize 一致），
-                // 再按内容区夹一刀，避免极端长宽比下内接矩形仍超出可用区域。
-                // 直径取屏幕短边：圆屏手表是方形屏，短边即直径；非方形的手机/模拟器上也开着
-                // 圆屏适配时，用长边（例如 1440x2560 的 2560）会算出比屏幕还大的内接矩形。
-                val videoMul = videoHeight.toFloat() / videoWidth.toFloat()
-                val diameter = minOf(screenW, screenH).toDouble()
-                val mulSquare =
-                    videoHeight.toDouble() * videoHeight / (videoWidth.toDouble() * videoWidth)
-                val side = Math.sqrt(diameter * diameter / (mulSquare + 1))
-                var width = (side + 0.5).toInt()
-                var height = (side * videoMul + 0.5).toInt()
-                if (width > areaW) {
-                    height = (height.toLong() * areaW / width).toInt()
-                    width = areaW
-                }
-                if (height > areaH) {
-                    width = (width.toLong() * areaH / height).toInt()
-                    height = areaH
-                }
-                params.width = width
-                params.height = height
-            } else {
-                val videoRatio = videoWidth.toFloat() / videoHeight.toFloat()
-                val areaRatio = areaW.toFloat() / areaH.toFloat()
-                if (videoRatio > areaRatio) {
-                    params.width = areaW
-                    params.height = (areaW / videoRatio).toInt()
+            val ratio =
+                if (videoWidth > 0 && videoHeight > 0) videoWidth.toFloat() / videoHeight.toFloat()
+                else fallbackRatio
+
+            // 尺寸计算是纯逻辑（`ShortVideoLayoutMath`，有 JVM 单测）：这里只负责取区域、
+            // 写 layoutParams 并居中。圆屏直径取屏幕短边——圆屏手表是方形屏，短边即直径；
+            // 非方形的手机/模拟器上取长边（例如 1440x2560 的 2560）会算出比屏幕还大的内接矩形。
+            val size =
+                if (activity.roundAdapted) {
+                    ShortVideoLayoutMath.fitRound(
+                        ratio, minOf(activity.screenWidth, activity.screenHeight), areaW, areaH
+                    )
                 } else {
-                    params.width = (areaH * videoRatio).toInt()
-                    params.height = areaH
-                }
-            }
+                    ShortVideoLayoutMath.fit(ratio, areaW, areaH)
+                } ?: return
+
+            val width = size[0]
+            val height = size[1]
+            if (params.width == width && params.height == height) return
+
+            params.width = width
+            params.height = height
             params.gravity = Gravity.CENTER
-            textureView?.layoutParams = params
+            texture.layoutParams = params
+            // 新的 layoutParams 要等下一帧布局才生效；缩放矩阵的 pivot 取 view 宽高，
+            // 必须等布局完成后再重算，否则处于双指缩放状态时重摆会把画面推出中心。
+            texture.post { applyScale() }
         }
 
         /**
@@ -1206,6 +1355,13 @@ class ShortVideoPagerAdapter(
         }
 
         fun play() {
+            // 还没 prepare 时 `start()` 是空操作，但以前这里仍把 isPlaying 标成 true：
+            // 它是「保持亮屏」的判据，于是取流 / prepare 失败或还没完成时窗口会一直挂着
+            // KEEP_SCREEN_ON。真正起播交给 onPrepared 的 isActive 分支。
+            if (!isPrepared) {
+                isPlaying = false
+                return
+            }
             playerBridge.start()
             isPlaying = true
             buttonVideo.setImageResource(R.drawable.btn_player_pause)
@@ -1299,6 +1455,13 @@ class ShortVideoPagerAdapter(
             isPlaying = false
             isActive = false
             currentScale = 1.0f
+            // 尺寸随播放器一起作废：holder 会被复用，留着上一条的尺寸会让下一次
+            // updateVideoSize() 用错比例（去重字段也要一起清）。
+            videoWidth = 0
+            videoHeight = 0
+            appliedVideoWidth = 0
+            appliedVideoHeight = 0
+            fallbackRatio = ShortVideoLayoutMath.DEFAULT_RATIO
             // 若在"转圈可见"状态下被回收，必须同步复位，否则指示器会一直转到下次 initPlayer
             lastBufferingVisible = false
             bufferingIndicator.visibility = View.GONE
@@ -1313,10 +1476,9 @@ class ShortVideoPagerAdapter(
             videoContainer.removeAllViews()
         }
 
-        fun updateVideoSize(screenW: Int, screenH: Int) {
-            if (isPrepared) {
-                adjustVideoSize(screenW, screenH)
-            }
+        /** 可用区域尺寸变了：从 state 现取尺寸重摆一次（`onConfigurationChanged` 会转过来）。 */
+        fun updateVideoSize() {
+            applyVideoSizeFromState(playerBridge.state.value)
         }
     }
 

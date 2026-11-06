@@ -19,8 +19,7 @@ import com.RobinNotBad.BiliClient.util.CenterThreadPool
 import com.RobinNotBad.BiliClient.util.Logu
 import com.RobinNotBad.BiliClient.util.AccountStateStore
 import com.RobinNotBad.BiliClient.util.MsgUtil
-import com.RobinNotBad.BiliClient.util.SettingsKeys
-import com.RobinNotBad.BiliClient.util.SharedPreferencesUtil
+import com.RobinNotBad.BiliClient.util.NetworkPlaybackQuality
 import org.json.JSONException
 import java.io.IOException
 
@@ -110,7 +109,9 @@ class JumpToPlayerActivity : BaseActivity() {
 
         download = intent.getIntExtra("download", 0)
 
-        data.qn = if (data.qn != -1) data.qn else SharedPreferencesUtil.getInt(SettingsKeys.PLAY_QN, 16)
+        // 起播清晰度：Intent 显式指定的优先；否则按「当前网络类型 + 默认清晰度」决定
+        // （Wi-Fi / 移动数据可分别设置，判定统一在 NetworkPlaybackQuality）
+        data.qn = if (data.qn != -1) data.qn else NetworkPlaybackQuality.defaultQn(this)
         // 下载不受清晰度权限影响（可用性由服务端决定）；播放要把请求档位夹到账号权限内，
         // 否则超权请求会被服务端降级，反而可能拿到比权限内最高档更低的流
         if (download == 0) data.qn = AccountStateStore.clampQuality(data.qn)
@@ -124,6 +125,13 @@ class JumpToPlayerActivity : BaseActivity() {
             try {
                 if (playerData!!.isBangumi) PlayerApi.getBangumi(playerData!!)
                 else PlayerApi.getVideo(playerData!!, download != 0)
+
+                // 「继续播放」入口带来的本地会话进度必须在取流之后补回：getVideo/getBangumi 会
+                // 用服务端 last_play_time 覆盖 playerData.progress（匿名态或没有观看记录时直接
+                // 变 0），覆盖后播放器拿到的续播位置就是 0，表现为"续播没生效"。
+                // 只有明确带了该 extra 的入口才生效，其它入口行为不变。
+                val resumeMs = intent.getIntExtra(EXTRA_RESUME_PROGRESS_MS, 0)
+                if (resumeMs > 0) playerData!!.progress = resumeMs
 
                 Logu.d("history", playerData!!.progress.toString())
                 jump()
@@ -177,5 +185,10 @@ class JumpToPlayerActivity : BaseActivity() {
             textView.text = reason
             textView.setOnClickListener { finish() }
         }
+    }
+
+    companion object {
+        /** 本地会话续播进度（毫秒）：只有「继续播放」入口会带，见 PlayerApi.buildResumeIntent。 */
+        const val EXTRA_RESUME_PROGRESS_MS = "resume_progress_ms"
     }
 }

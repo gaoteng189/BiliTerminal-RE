@@ -5,7 +5,10 @@ import com.RobinNotBad.BiliClient.util.UiText
 import android.content.Context
 import android.graphics.Color
 import com.RobinNotBad.BiliClient.model.DmSegMobileReply
+import com.RobinNotBad.BiliClient.ui.appearance.ColorScheme
+import com.RobinNotBad.BiliClient.util.DeviceProfile
 import com.RobinNotBad.BiliClient.util.Logu
+import com.RobinNotBad.BiliClient.util.SettingsKeys
 import com.RobinNotBad.BiliClient.util.SharedPreferencesUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +26,7 @@ import master.flame.danmaku.danmaku.model.android.Danmakus
 import master.flame.danmaku.danmaku.parser.BaseDanmakuParser
 import master.flame.danmaku.danmaku.parser.android.BiliDanmukuParser
 import master.flame.danmaku.danmaku.parser.android.BiliProtobufDanmakuParser
+import master.flame.danmaku.danmaku.util.DanmakuUtils
 import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
@@ -35,14 +39,27 @@ data class DanmakuState(
     val textSizeScale: Float = 0.7f,
     val transparency: Float = 0.5f,
     val mergeDuplicate: Boolean = false,
-    val allowOverlap: Boolean = true
+    val allowOverlap: Boolean = true,
+    /** 「强制为滚动弹幕」：开启后顶部/底部固定弹幕按滚动渲染（见 [DanmakuStylePolicy]）。 */
+    val forceScroll: Boolean = false,
+    /** 直播滚动弹幕停留时长倍率（与 [speedFactor] 独立，见 [LiveDanmakuFactorPolicy]）。 */
+    val liveDurationFactor: Float = LiveDanmakuFactorPolicy.DEFAULT
 )
 
 class DanmakuManager(
-    private val danmakuView: IDanmakuView
+    private val danmakuView: IDanmakuView,
+    /** 直播模式：滚动弹幕用 [LiveDanmakuFactorPolicy] 的独立倍率，而不是录播的弹幕速度。 */
+    private val isLiveMode: Boolean = false
 ) {
     private var danmakuContext: DanmakuContext? = null
     private var danmakuParser: BaseDanmakuParser? = null
+
+    /**
+     * 弹幕数量保护的状态机（可空）。注入后，超出阈值的弹幕源在 [loadFromXmlFile] /
+     * [loadFromXmlInput] / [loadFromProtobufSegments] 入口直接跳过——计数、提示与「手动强制加载」
+     * 都在播放页（见 `player/DanmakuLoadPolicy`），这里只负责最后一道「到底要不要真加载」。
+     */
+    private var loadPolicy: DanmakuLoadPolicy? = null
 
     private var mediaPosition: (() -> Long)? = null
     private var mediaPlaying: (() -> Boolean)? = null
@@ -55,6 +72,30 @@ class DanmakuManager(
      * 那一次调用会被静默丢弃。`prepared()` 回调里会用它补设一次。
      */
     private var pendingSpeed: Float? = null
+
+    /**
+     * 窗口加载（批次 2）追加分段时的同步锁与待灌队列。
+     *
+     * 追加路径有两个线程：`DanmakuStreamLoader` 在后台拉完段后 `runOnUiThread` 调
+     * [appendSegments]；而 DFM 的 `prepared()` 回调跑在**渲染线程**上补灌。
+     * 另外 [appendSegments] 可能在 `prepare()` 完成之前就到了 —— `DrawHandler.addDanmaku`
+     * 在 `drawTask == null` 时会**静默丢弃**，直接调就永久丢段，所以先入队、`prepared()` 里再灌。
+     */
+    private val appendLock = Any()
+    private val pendingSegments = ArrayList<DmSegMobileReply>()
+
+    /**
+     * 批次 3「本人弹幕边框」的判定快照：是否开启、本人 mid、边框色。
+     *
+     * 为什么是快照而不是每次读 SharedPreferences：
+     * - 判定发生在 DFM 的**渲染线程**（`prepared()` 回调里遍历全部弹幕）与逐条追加路径上，
+     *   那里绝不能做 SharedPreferences / 主题缓存的 IO；
+     * - 设置项本来也只在「下一次加载弹幕」时生效（换视频 / 切 P / 重进播放页会重新 prepare），
+     *   在 [configureAndPrepare] 里刷新一次正是这个粒度。
+     */
+    private var selfBorderEnabled = false
+    private var selfBorderOwnMid = 0L
+    private var selfBorderColor = 0
 
     private val _state = MutableStateFlow(DanmakuState())
     val state: StateFlow<DanmakuState> = _state.asStateFlow()
@@ -91,17 +132,48 @@ class DanmakuManager(
         val prefs = SharedPreferencesUtil.getSharedPreferences()
         _state.update {
             DanmakuState(
-                maxLines = SharedPreferencesUtil.getInt("player_danmaku_maxline", 15),
+                // 批次 2：弹幕行数按设备档位封顶。用户设置仍然生效，但不会超过档位上限
+                // （低端 6 行 / 中端 10 行 / 高端 15 行，依据见 util/DeviceProfile 的 KDoc）——
+                // 弱机上同屏行数过多会先掉帧、再出现弹幕互相压字，而这类设备正是反馈「播放卡」的主力。
+                maxLines = DeviceProfile.capDanmakuMaxLines(
+                    SharedPreferencesUtil.getInt(SettingsKeys.PLAYER_DANMAKU_MAXLINE, 15),
+                    DeviceProfile.current().danmakuMaxLines
+                ),
                 speedFactor = SharedPreferencesUtil.getFloat("player_danmaku_speed", 1.0f),
                 textSizeScale = SharedPreferencesUtil.getFloat("player_danmaku_size", 0.7f),
                 transparency = SharedPreferencesUtil.getFloat("player_danmaku_transparency", 0.5f),
                 mergeDuplicate = SharedPreferencesUtil.getBoolean("player_danmaku_mergeduplicate", false),
-                allowOverlap = SharedPreferencesUtil.getBoolean("player_danmaku_allowoverlap", true)
+                allowOverlap = SharedPreferencesUtil.getBoolean("player_danmaku_allowoverlap", true),
+                // E2：设置项一直存在（SettingTerminalPlayerActivity「强制为滚动弹幕」），这里接上消费方。
+                forceScroll = SharedPreferencesUtil.getBoolean(SettingsKeys.PLAYER_DANMAKU_FORCE_R2L, false),
+                // D5：直播倍率存档是 list_choose 的字符串，解析与钳制统一走策略类。
+                liveDurationFactor = LiveDanmakuFactorPolicy.parseStored(
+                    SharedPreferencesUtil.getString(
+                        LiveDanmakuFactorPolicy.KEY,
+                        LiveDanmakuFactorPolicy.DEFAULT.toString()
+                    )
+                )
             )
         }
     }
 
+    /**
+     * 注入弹幕数量保护状态机（可空 = 不保护）。播放页在绑定弹幕视图后注入同一个实例，
+     * 这样「查数量 → 判定 → 手动强制」只有一份真相，管理器只做最后一道守卫。
+     */
+    fun setLoadPolicy(policy: DanmakuLoadPolicy?) {
+        loadPolicy = policy
+    }
+
+    private fun shouldLoadByPolicy(): Boolean {
+        val policy = loadPolicy ?: return true
+        if (policy.shouldLoad()) return true
+        Logu.d("弹幕", "数量保护：已抑制本次弹幕加载（count=" + policy.knownCount() + "）")
+        return false
+    }
+
     fun loadFromXmlFile(xmlFilePath: String) {
+        if (!shouldLoadByPolicy()) return
         val file = File(xmlFilePath)
         if (!file.exists()) return
 
@@ -122,6 +194,7 @@ class DanmakuManager(
     }
 
     fun loadFromXmlInput(inputStream: InputStream) {
+        if (!shouldLoadByPolicy()) return
         try {
             val parser = createParser(inputStream)
             configureAndPrepare(parser)
@@ -137,6 +210,7 @@ class DanmakuManager(
      * 两个播放器共用同一套配置与回调。
      */
     fun loadFromProtobufSegments(segments: List<DmSegMobileReply>) {
+        if (!shouldLoadByPolicy()) return
         try {
             val parser = BiliProtobufDanmakuParser()
             parser.sharedPreferences = SharedPreferencesUtil.getSharedPreferences()
@@ -181,8 +255,19 @@ class DanmakuManager(
     }
 
     private fun configureAndPrepare(parser: BaseDanmakuParser) {
-        danmakuParser = parser
+        // 新一次 prepare 意味着一批全新的弹幕源（换视频 / 切 P / 回退 XML）：上一轮窗口加载
+        // 还没灌进去的分段必须丢掉，否则会串到新视频的时间轴上（弹幕「提前出现」或重复）。
+        synchronized(appendLock) { pendingSegments.clear() }
+
+        // 批次 3：刷新「本人弹幕边框」的判定快照（开关 / 本人 mid / 主题主色）。
+        // 必须在这里（调用方的主线程）算好，`prepared()` 跑在渲染线程上只能读字段。
+        refreshSelfBorderSpec()
+
         val st = _state.value
+        // E2：强制为滚动弹幕开启时，解析结果里的顶部/底部弹幕要换成滚动弹幕
+        // （DFM 的类型由具体子类决定，必须换实例，见 [ForceScrollParser]）。
+        val activeParser: BaseDanmakuParser = if (st.forceScroll) ForceScrollParser(parser) else parser
+        danmakuParser = activeParser
 
         val maxLinesPair = hashMapOf(BaseDanmaku.TYPE_SCROLL_RL to st.maxLines)
         val overlap = hashMapOf(
@@ -193,7 +278,11 @@ class DanmakuManager(
         danmakuContext = DanmakuContext.create().apply {
             setDanmakuStyle(IDisplayer.DANMAKU_STYLE_STROKEN, 1f)
             setDuplicateMergingEnabled(st.mergeDuplicate)
-            setScrollSpeedFactor(st.speedFactor)
+            // D5：直播用独立倍率（默认 2.0），录播沿用「弹幕速度」；
+            // DFM 里 factor 越大停留越久，等于这里的「停留时长倍率」。
+            setScrollSpeedFactor(
+                LiveDanmakuFactorPolicy.scrollSpeedFactor(isLiveMode, st.speedFactor, st.liveDurationFactor)
+            )
             setScaleTextSize(st.textSizeScale)
             setMaximumLines(maxLinesPair)
             setDanmakuTransparency(st.transparency)
@@ -206,6 +295,14 @@ class DanmakuManager(
                 // 一旦异常逸出会打断该线程，表现就是"弹幕一条都不显示"且没有任何上层报错。
                 try {
                     _state.update { it.copy(isPrepared = true) }
+                    // 窗口加载（批次 2）：`prepare()` 之前/期间到达的后续分段此时补灌。
+                    // 必须放在这里 —— `DrawHandler.addDanmaku` 在 drawTask 就绪前会静默丢弃，
+                    // 那正是「弹幕只出前几分钟」这类问题的根因。
+                    flushPendingSegments()
+                    // 批次 3：给本人的弹幕加边框。必须放在 prepared()（首帧绘制之前）——
+                    // DFM 的 `paintWidth/paintHeight` 是首帧 measure 时才定（带边框会多出
+                    // 2*BORDER_WIDTH 的内边距），之后再设 borderColor 会出现「框比字小」。
+                    markSelfDanmakuBorders()
                     // 补设可见性：`show()` / `hide()` 在 prepare 之前调用时只把意图写进 state，
                     // 真正作用到 DanmakuView 的这一步必须在这里补。漏掉的话，用户明明已经关掉弹幕，
                     // 新建的 DanmakuManager（短视频每条一建、长视频切 P 也重建）却按默认可见起播，
@@ -260,7 +357,7 @@ class DanmakuManager(
         })
 
         danmakuView.enableDanmakuDrawingCache(true)
-        danmakuView.prepare(parser, danmakuContext)
+        danmakuView.prepare(activeParser, danmakuContext)
         applyMediaClock()
         // **不在这里 start**：prepare() 只准备数据，而它何时 ready 是异步的（后台解析）。
         // 启动渲染循环放到 `prepared()` 回调里按「此刻是否真的在播」判断 —— 否则暂停中
@@ -284,7 +381,10 @@ class DanmakuManager(
         backgroundColor: Int = 0
     ) {
         val ctx = danmakuContext ?: return
-        val danmaku = ctx.mDanmakuFactory.createDanmaku(type, ctx) ?: return
+        // E2：实时插入的弹幕（直播聊天 / 用户自己发的）同样按「强制为滚动弹幕」换算类型，
+        // 否则直播的「进入直播间」等底部固定弹幕仍会挡住画面。
+        val effectiveType = DanmakuStylePolicy.effectiveType(_state.value.forceScroll, type)
+        val danmaku = ctx.mDanmakuFactory.createDanmaku(effectiveType, ctx) ?: return
         danmaku.text = text
         danmaku.padding = 5
         danmaku.priority = 1
@@ -297,6 +397,138 @@ class DanmakuManager(
         danmakuView.addDanmaku(danmaku)
     }
 
+    /**
+     * 窗口加载：把**后续分段**增量追加进当前弹幕视图（批次 2，供 [DanmakuStreamLoader] 调用）。
+     *
+     * 与 [loadFromProtobufSegments] 的区别：后者重建 parser（等价于「重新 prepare 一份弹幕源」），
+     * 这里只往**已经准备好的**视图里补条目，不打断正在滚的弹幕、不重置时间轴。
+     *
+     * 线程与时机：
+     * - 应由调用方 `runOnUiThread`（`DanmakuStreamLoader` 已经这么做）；
+     * - DFM 还没 prepared 时**不会丢**：分段先入 [pendingSegments]，在 `prepared()` 里补灌；
+     * - 同一次 prepare 周期内同一段只该喂一次（重复喂会重影），去重由调用方负责。
+     *
+     * 数量保护：仍走 [shouldLoadByPolicy]，与首次加载同一道闸。
+     */
+    fun appendSegments(segments: List<DmSegMobileReply>) {
+        if (segments.isEmpty()) return
+        if (!shouldLoadByPolicy()) return
+
+        val ready = _state.value.isPrepared && danmakuContext != null
+        if (!ready) {
+            synchronized(appendLock) { pendingSegments.addAll(segments) }
+            Logu.d("弹幕", "DFM 未就绪，${segments.size} 个分段先入待灌队列")
+            return
+        }
+        for (segment in segments) {
+            appendSegmentInternal(segment)
+        }
+    }
+
+    /** 把 pending 队列灌进视图（`prepared()` 回调里调用，运行在 DFM 渲染线程）。 */
+    private fun flushPendingSegments() {
+        var pending: List<DmSegMobileReply>? = null
+        synchronized(appendLock) {
+            if (pendingSegments.isNotEmpty()) {
+                pending = ArrayList(pendingSegments)
+                pendingSegments.clear()
+            }
+        }
+        val list = pending ?: return
+        var ok = 0
+        for (segment in list) {
+            if (appendSegmentInternal(segment)) ok++
+        }
+        Logu.d("弹幕", "补灌 ${list.size} 个分段（成功 $ok）")
+    }
+
+    /**
+     * 批次 3：刷新「本人弹幕边框」的判定快照。
+     *
+     * 只在 [configureAndPrepare] 里调用（调用方主线程）。开关默认开
+     * （`SettingsKeys.PLAYER_DANMAKU_SELF_BORDER`）；未登录时 [selfBorderOwnMid] <= 0，
+     * 即使开关开着也不会有任何弹幕命中。
+     */
+    private fun refreshSelfBorderSpec() {
+        selfBorderEnabled = SharedPreferencesUtil.getBoolean(SettingsKeys.PLAYER_DANMAKU_SELF_BORDER, true)
+        selfBorderOwnMid = SharedPreferencesUtil.getLong(SettingsKeys.MID, 0L)
+        // 主题主色可能带透明度；DFM 画的是描边矩形，半透明在视频画面上几乎看不见，
+        // 所以统一置为不透明（见 DanmakuSelfStylePolicy.borderColorFor）。
+        selfBorderColor = DanmakuSelfStylePolicy.borderColorFor(ColorScheme.PRIMARY)
+    }
+
+    /**
+     * 批次 3：遍历解析结果，给本人的弹幕设置边框色（在 DFM 渲染线程的 `prepared()` 里调用）。
+     *
+     * - 时机：此时 `DrawTask` 已 `getDanmakus()` 拿到缓存集合，遍历不会触发重新解析；
+     *   且首帧尚未绘制，`measure()` 会算上边框内边距（`AndroidDisplayer` 在
+     *   `borderColor != 0` 时给宽高各加 `2 * BORDER_WIDTH`），边框不会压住文字。
+     * - 复杂度：单次 O(n) 的字符串归一化比较；5000 条弹幕量级约 1~2ms，**一次性**，
+     *   不进渲染循环、不产生额外对象分配（`normalize` 最多生成短字符串）。
+     * - 覆盖范围：首窗口与「prepare 期间补灌的分段」都在解析结果里，见 [flushPendingSegments]。
+     */
+    private fun markSelfDanmakuBorders() {
+        if (!selfBorderEnabled || selfBorderOwnMid <= 0L) return
+        val items = danmakuParser?.danmakus ?: return
+        val iterator = items.iterator()
+        var marked = 0
+        while (iterator.hasNext()) {
+            val item = iterator.next() ?: continue
+            if (DanmakuSelfStylePolicy.matchesOwnHash(selfBorderOwnMid, item.userHash)) {
+                item.borderColor = selfBorderColor
+                marked++
+            }
+        }
+        if (marked > 0) Logu.d("弹幕", "本人弹幕边框：已标记 $marked 条")
+    }
+
+    /**
+     * 单个分段 → 逐条 `addDanmaku`。
+     *
+     * 字段换算**必须与 `BiliProtobufDanmakuParser.parseDanmakuElem` 保持一致**（那条路径仍在用：
+     * 首窗口就是交给 parser 解析的），否则「首窗口」与「后续窗口」的弹幕字号/颜色/高度会不一样：
+     * - `mode 7/8`（高级/代码弹幕）跳过 —— 与解析器一致，DFM 也不支持；
+     * - `DanmakuUtils.fillText` 负责换行符分段（`\n`），不能自己写 `item.text = content`；
+     * - `textSize = fontsize * (density - 0.6f)`、`textColor = color | 0xFF000000`（不透明化）。
+     */
+    private fun appendSegmentInternal(segment: DmSegMobileReply): Boolean {
+        val context = danmakuContext ?: return false
+        val st = _state.value
+        val elems = segment.elems ?: return false
+        var added = 0
+        for (elem in elems) {
+            try {
+                if (elem.mode == 7 || elem.mode == 8) continue
+                val content = elem.content
+                if (content.isNullOrEmpty()) continue
+                val type = DanmakuStylePolicy.effectiveType(st.forceScroll, elem.mode)
+                val item = context.mDanmakuFactory.createDanmaku(type, context) ?: continue
+                item.time = elem.progress.toLong()
+                DanmakuUtils.fillText(item, content)
+                item.textSize = elem.fontsize * (context.displayer.density - 0.6f)
+                item.textColor = elem.color or 0xFF000000.toInt()
+                item.textShadowColor =
+                    if ((elem.color or 0xFF000000.toInt()) <= Color.BLACK) Color.WHITE else Color.BLACK
+                // 批次 3：窗口追加的分段同样要识别本人弹幕。首窗口走解析器 + `prepared()` 遍历，
+                // 后续分段是应用层逐条建实例，两条路径都得覆盖，
+                // 否则「视频后半段自己发的弹幕没有边框」。
+                if (DanmakuSelfStylePolicy.shouldApplyBorder(
+                        selfBorderOwnMid, elem.midHash, selfBorderEnabled
+                    )
+                ) {
+                    item.borderColor = selfBorderColor
+                }
+                // 不在这里 setTimer / 设 flags：`DrawHandler.addDanmaku` 会自己补
+                // `item.flags = mGlobalFlagValues` 与 `item.setTimer(timer)`，
+                // 我们拿不到渲染线程的 timer（也没有稳定句柄），重复设置反而会打乱计时基准。
+                danmakuView.addDanmaku(item)
+                added++
+            } catch (e: Exception) {
+                Logu.e("弹幕", "追加弹幕失败: ${e.message}")
+            }
+        }
+        return added > 0
+    }
 
     fun show() {
         _state.update { it.copy(isVisible = true) }
@@ -359,6 +591,9 @@ class DanmakuManager(
     }
 
     fun release() {
+        // 窗口加载（批次 2）：待灌队列里的分段属于这次播放，释放后不再有意义。
+        // 不清的话，复用同一 DanmakuManager 的下一个视频会把上一部的尾段灌进新时间轴。
+        synchronized(appendLock) { pendingSegments.clear() }
         try { danmakuView.release() } catch (_: Exception) {}
         // 复位 isPrepared：show/hide/pause/resume/seekTo 都有 `if (!isPrepared) return` 守卫，
         // 释放后不复位会让复用同一 DanmakuManager 的路径以为弹幕还挂在已释放的 view 上

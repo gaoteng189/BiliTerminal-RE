@@ -113,6 +113,8 @@
     - **26.10.25 起下载侧把 DASH 双文件 remux 成单文件**：`util/MediaMerger.kt` 用 `MediaExtractor`（支持分片 MP4 的 `moof`）+ `MediaMuxer` 重封装，产物就是和 `fnval=1` 同形态的双轨 MP4；这不是「把 `fnval=16` 的纯视频当合一文件」，而是容器层真正写入了音频轨。播放侧的外部音轨路径保留给老缓存。
     - **未覆盖**：`platform=html5`（播放侧 mtvPlayer 分支）实测同样是 `trak=2`，与 `pc` 一致；但只测了 1 个稿件、未登录，大会员内容与其它稿件未复验。
     - **播放侧的含义（26.10.30 修「播放器内切不到 1080P」时确认，同日两轮）**：直播之外的播放链路**一律先试 DASH**（`getVideoDash` / `getBangumiDash`，播放器另起一路外部音频），DASH 失败/缺音轨才回退 `fnval=1` 的合一 MP4。低档位也走 DASH 的原因不是「低档只能 DASH 拿」，而是清晰度面板需要 DASH 的完整档位清单：`fnval=1` 会按请求档位裁剪清单，720P 请求只回 `accept_quality:[64,16]`，1080P60/4K 直接消失。**不能只靠"列表里有 1080P 就以为能拿 1080P"**：`accept_quality` 与 `fnval` 无关，`fnval=1` 时它照样列 1080P，只是 `quality` 被降到 64。判据与取流入口见 `player/PlayerStreamPolicy.kt`、`player/QualityAccessPolicy.kt` 与 `PlayerApi.getPlaybackVideo/getPlaybackBangumi`（`docs/architecture-map.md` §7.57）。
+    - **26.11.01 回退后播放侧回到「单路合一 MP4」**：26.10.31 末引入的 ExoPlayer 统一时钟与 ijkplayer 内核补丁在 26.11.01 整套撤回（§六十四），`PlayerApi` 恢复只取 `fnval=1` 的 `durl[0]`——26.11.04 实测播放请求是 `fnval=1&qn=16`、响应 `format:"mp4"` + `durl[]`，清晰度天花板因此回到 720P。上面那条「一律先 DASH」是 26.10.30~31 的中间态结论，别照着它改代码。
+    - **直链的 CDN 防盗链只要 Referer、不要 Cookie（26.11.04 实测）**：`playurl` 高峰会把 `durl[].url` 调度到 mcdn/PCDN 边缘节点，host 形如 `r5uw39t.edge.mountaintoys.cn:4483`（`os=mcdn&og=cos&mcdnid=…&upsig=…`），**不在 `bilibili.com` / `bilivideo.com` / `hdslb.com` 任何白名单里**，但它照样强制 `Referer: https://www.bilibili.com/`：同一 URL 只发 `Range: bytes=0-1023` → **403**（openresty 页），补上 Referer → **206** + MP4 字节（`ftypisom…avc1`）。缺 Referer 时 IJK 报 `-10000`，用户看到的就是「部分视频播放时报错」。**Cookie 不是必需**——URL 自带 `upsig` 签名，别把它当第三方源，也别为了防盗链把 Cookie 一起发出去；判据实现见 `player/PlayerRequestPolicy.kt`（§六十九）。
     - **`qn` 仍然决定「清单宽度」（26.10.30 实测）**：`qn` 在 DASH 下不决定返回哪条流，但决定服务端把哪些档位写进 `accept_quality` / `dash` 流列表。`qn=64` 请求只回 `[64,16]`，`qn=127` 才回完整档位；所以播放侧取流固定用 `qn=127`（`PlayerApi.QN_REQUEST_MAX`），真正播哪档由 `DashData.getVideoStream(playerData.qn)` 选。下载侧 `QualityChooserActivity` 早就是这个做法。
     - **4K（120）是否下发由大会员权限决定**：匿名请求 `qn=127&fnval=4048&fourk=1` 实测只回 `accept_quality:[116,80,64,32,16]`，**响应里连 120 都没有**（`fnval=4048` 已含 128/4K 位、`fourk=1` 也带了）。即「列表里没有 4K」不是参数错误，而是账号权限过滤；播放器对没权限账号补一个锁定提示位（见 §7.57），**4K 流本身只能用大会员账号验证**。
 13. **搜索排序只长在「分类搜索」上，聚合搜索没有**（26.10.24 加搜索排序时核实）：`wbi/search/all/v2` 只接受 `keyword`（`bilibili-API/docs/search/search_request.md:21-27`），`order` 是 `wbi/search/type` 的参数——视频/专栏 `totalrank`（默认）/ `click` / `pubdate` / `dm` / `stow` / `scores`（专栏另有 `attention`），直播间 `online` / `live_time`，用户 `0` / `fans` / `level`（`:598`）。
@@ -210,3 +212,69 @@
 评论举报是**可选私有功能**（机制见 `docs/optional-features.md`）：接口可达性、理由表、错误码映射等全部结论都跟着实现一起放在私有仓库，公开侧只有 `util/OptionalFeatures` 里的门面与评论区面板上的一个条件挂点。公开文档里不写它的实现细节，理由见 `docs/optional-features.md` 的「红线」一节。
 
 需要改这块时：先把私有仓库检出到仓库根目录的 `private/`（`python build_tui.py --sync-private`），再读那边的 README。
+
+## 9. 图床 `upload_bfs` 与评论带图（26.11.02）
+
+**接口**：`POST https://api.bilibili.com/x/dynamic/feed/draw/upload_bfs`（multipart：`file_up` 文件、`category=daily`、`biz`、`csrf`＝cookie 里的 `bili_jct`；Cookie 鉴权）。成功 `data` 给 `image_url` / `image_width` / `image_height` / `img_size`（**KB，小数**，`docs/dynamic/publish.md`）。
+
+**`biz` 决定图片落在哪个 BFS 目录，不是"业务类型校验"**：
+
+| 用途 | biz | 结果目录 | 依据 |
+| --- | --- | --- | --- |
+| 动态图 / **评论图** | `new_dyn` | `/bfs/new_dyn/` | 上游 PiliPlus `common_rich_text_pub_page.dart` 评论图与动态图共用 `biz: 'new_dyn'`；评论的 `pictures` 只认这个目录下的图 |
+| 私信图 | `im` | `/bfs/im/` | 上游 PiliPlus `whisper_detail/view.dart` 传 `biz: 'im'` |
+
+- **踩过的坑**：26.10.02（F3-c）把评论图改成自造值 `new_reply`，理由是"用 new_dyn 会被服务端当成动态图处理"——这个理由是错的（biz 只影响目录）。改完后图能上传成功，但发评论被服务端以 **12066** 拒绝。26.11.02 恢复 `new_dyn`。
+- **12066 语义仍未确证**：本地 `bilibili-API/` 全库无收录，上游 collector 的 `docs/comment/action.md` 错误码表末尾也写着「其他错误码有待补充」。现在的做法是发送失败时把服务端 `message` 原样带出来（`ReplyApi.sendReplyDetailed`），下次复现能直接看到服务端说了什么。
+- **不预设大会员门槛**：图片评论的资格由服务端判定。客户端原先在点「图片」时先调 `VipApi.getVipInfo()`，非大会员直接拦掉；26.11.02 已删除（用户点名"发图不需要大会员"）。
+
+## 10. 评论发送「成功」≠ 评论区可见（26.11.02，反馈 #85 的根因）
+
+**症状**：用户发评论 → App 提示「发送成功」、评论立刻出现在列表里 → 一刷新/重进评论区就没有了（那个视频原本只有他一个人评论，排除分页问题）。
+
+**结论**：`POST /x/v2/reply/add` 会在评论**尚未进入公开列表**（先审后发 / 列表同步延迟）时就返回 `code=0`，`data.reply` 里甚至已经带了一条完整评论对象。所以「接口成功」只代表服务端收下了这次提交，不代表这条评论已经可被公开列表读到。
+
+**客户端对策**（`ReplyApi.isReplyVisible`）：
+
+1. 发送成功后取 `data.rpid`（`data.reply` 为 null 时也用它），调 `GET /x/v2/reply/wbi/main`，带 `type`/`oid`/`mode=2`（仅按时间）+ `seek_rpid=<rpid>` 直接定位新评论，在返回的 `replies`（含 `childMsgList`）里找这个 rpid。
+2. 三次机会：立即、0.4s 后、1.0s 后。查到才算发布成功；三次都查不到再兜底查一次「按时间的第一页」（新评论只要公开可见，必然在 mode=2 的第一页；这一步防的是 `seek_rpid` 在个别评论区不生效）。仍查不到就提示「评论已提交，但评论区暂时查不到（可能正在审核）」，**不**把评论本地插进列表、**不**关闭写评论页。
+3. 楼中楼回复不做这层核实（`seek_rpid` 对子评论不可靠），仍是「成功即插入」的老行为。
+
+**实测边界**：本机 AVD 未登录 B 站账号，无法端到端复现审核场景；这条对策的依据是「接口先回成功、列表后可见」的已知形态（兄弟仓库 `BiliTerminal-Revival` 的 `ReplyApi.isReplyVisible` 是同一思路）。真机复现时看 logcat 的 `debug-发送评论`（服务端整包）与 `debug-评论可见性`（查询结果）即可判断是审核还是别的问题。
+
+## 11. 关注分组：把一个已关注的人加进分组（26.11.02，反馈 #88）
+
+| 用途 | 接口 | 参数 |
+| --- | --- | --- |
+| 列出我的分组 | `GET /x/relation/tags` | — |
+| 某人在哪些分组 | `GET /x/relation/tag/user?fid=<mid>` | 返回 `data` 是「分组 id → 分组名」对象；**在默认分组时该对象为空**；特别关注是 `tagid=-10` |
+| **追加**到分组 | `POST /x/relation/tags/addUsers` | `tagids`（逗号分隔，**复数**）、`fids`（逗号分隔）、`csrf` |
+| 从 A 移到 B | `POST /x/relation/tags/moveUsers` | `beforeTagids` / `afterTagids` / `fids` / `csrf` |
+
+- **`addUsers` 是追加语义，`moveUsers` 是移动语义**：前者不会把他从原分组移走、也不取关；后者会。两组字段名完全不同（`tagids` vs `beforeTagids`/`afterTagids`），写错只会在真机上收到 `-400`，看不出是拼写问题——所以两个字段组装都抽成纯函数并钉了单测（`FollowApiAddUsersTest` 里有一条「加入与移动是两组不同的字段名」的对照断言）。
+- **默认分组与特别关注不进「加入分组」菜单**：`tagid=0` 是默认分组（加入它等于没加），`-10` 是特别关注（有独立接口/入口）。弹窗只列 `tagid > 0` 的自建分组。
+- **新建分组后拿不到 tagid**：`POST /x/relation/tag/create` 的响应按文档 `data.tagid` 会回新 id，但当前实现只取 `code`；加入前按名字回查一次 `GET /x/relation/tags` 拿 tagid（服务端保证分组名唯一，重名会回 22106），比猜接口稳。
+
+## 12. `view_points` 的 `type` 是「分段类型」，不是「片头/片尾类型」（26.11.05，反馈 #99 / #34）
+
+`GET /x/player/wbi/v2?aid=&cid=` 的 `data.view_points[]` 每项形如 `{type, from, to, content, img_url, logo_url}`。**同一个字段在两类内容上的语义不同**：
+
+| 内容类型 | `view_points` 的含义 | `type` 的实际取值 |
+| --- | --- | --- |
+| **番剧 / 影视（PGC）** | 片头、片尾、正片等**运营标注** | `1` / `2` 等，带片头片尾语义 |
+| **UGC 投稿** | up 主或平台自动生成的**视频分段（章节）** | 实测**恒为 `2`**，`content` 才是章节名 |
+
+- **实测样本**：`BV1U74w6XEbB`（aid=117546476966330 / cid=43264904750，单P，129s）解开后是 10 段普通章节——「狂躁损伤」「泄漏源」「留声机」「舞者」「火炉」「兔子」「浮士德」「毒雾」「源石地板」「隐匿术士，黑蛇，反伤怪，飞机」，**10 段的 `type` 全部是 `2`**。
+- **踩坑形态**：把 `type == 2` 当成「片尾」后，UGC 稿件的每个章节都成了片尾 → 250ms 进度定时器每轮都命中 → 用户看到的是「一直在跳过片尾」。这就是反馈 #99 与 #34 的同根问题。
+- **对策**：自动跳过**只对 PGC 生效**（`PlayerActivity.isPgcPlayback()`，判据是 `is_bangumi` / `epid`），UGC 拿到空片段表；「显示视频分段」的浏览/点选不受影响。
+- **不要用 `content` 白名单代替这个判据**：番剧片段的 `content` 常为空串或「1-1」「正片」「简介」，按标题过滤会把真片头也挡掉，且挡不住「预告」类标注。
+
+## 13. Web Cookie 刷新：`refresh_token` 一次性轮换 + confirm 作废旧 Cookie（26.11.06）
+
+接口与流程文档在仓库快照 `bilibili-API/docs/login/cookie_refresh.md`（原始出处 socialsisteryi/bilibili-API-collect）。三条与实现直接相关的结论：
+
+1. **`cookie/refresh` 的响应会通过 `Set-Cookie` 下发新的 `SESSDATA` / `bili_jct` / `DedeUserID` / `DedeUserID__ckMd5` / `sid`**（`Domain=bilibili.com`，有效期约半年），同时在 JSON 的 `data.refresh_token` 里返回**新的** `refresh_token`。响应样例见上述文档快照。
+2. **`refresh_token` 是一次性轮换的**：刷新成功后旧的 `refresh_token` 就不再是「下次可用的口令」。所以「等 `confirm` 成功后再落盘新口令」是错的——中途任何异常（网络断、解析失败、进程被杀）都会让本地永久续不上会话，最终表现为随机掉登录。正确顺序：拿到新口令立刻持久化。
+3. **`confirm/refresh` 的语义是「让旧 `refresh_token` 对应的 Cookie 失效」**，它必须带**旧的** `refresh_token` 与**新** Cookie 里的 `bili_jct`。因此 confirm 之前必须先核对新 Cookie 真的落到本地了（至少 `SESSDATA` 非空、`DedeUserID` 与当前 mid 一致），否则「旧会话被作废 + 本地还是旧的」= 必掉登录。
+
+实现侧对应 `api/CookieRefreshApi.refreshCookie()` 返回的 `RefreshResult{OK, RETRY, NEED_LOGIN}`：只有刷新接口返回 `-101` 才算 `NEED_LOGIN`；`86095`（refresh_csrf 错 / 口令与 Cookie 不匹配）之类只算 `RETRY`，**不得**清本地凭证。

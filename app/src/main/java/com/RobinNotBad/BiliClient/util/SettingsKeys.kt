@@ -39,6 +39,18 @@ object SettingsKeys {
     const val UI_GLASS_COMPONENTS = "ui_glass_components"
     /** 暗色 / 亮色模式（"dark" / "light"），见 `ui/appearance/ColorMode`。 */
     const val UI_COLOR_MODE = "ui_color_mode"
+    /**
+     * 页面背景图（用户从相册选的图，装进 `filesDir/appearance/` 后的绝对路径）。空串 = 未设置。
+     * 取值与判据见 `ui/appearance/BackgroundImage`。
+     */
+    const val UI_BACKGROUND_PATH = "appearance_background_path"
+    /** 背景图适配方式（"cover" 填满 / "contain" 适应），见 `BackgroundImage.FIT_*`。 */
+    const val UI_BACKGROUND_FIT = "appearance_background_fit"
+    /**
+     * 背景图遮罩强度（百分比，0/25/50/75），**以字符串存**：设置页的 listChoose 统一按字符串存值。
+     * 非法值由 `BackgroundImage.coerceScrimPercent` 兜回默认。
+     */
+    const val UI_BACKGROUND_SCRIM = "appearance_background_scrim"
 
     // ==================== 详情页设置 ====================
     const val FAV_SINGLE = "fav_single"
@@ -123,10 +135,32 @@ object SettingsKeys {
     const val PLAYER = "player"
     /** 默认清晰度（qn）。 */
     const val PLAY_QN = "play_qn"
+    /**
+     * Wi-Fi 下起播用的默认清晰度（qn）。
+     *
+     * -1 = **跟随 [PLAY_QN]**（默认值），即「不配置就与改造前完全一致」。
+     * 读取统一走 `util/NetworkPlaybackQuality.defaultQn(context)`，不要在调用点自己拼
+     * 「先读 PLAY_QN_WIFI 再看是不是 -1」——同一套判定出现两份实现时必然漂移。
+     */
+    const val PLAY_QN_WIFI = "play_qn_wifi"
+    /**
+     * 移动数据下起播用的默认清晰度（qn）。
+     *
+     * -1 = 跟随 [PLAY_QN]；判定与 [PLAY_QN_WIFI] 同源，见 `util/NetworkPlaybackQuality`。
+     */
+    const val PLAY_QN_MOBILE = "play_qn_mobile"
 
     const val PLAYER_LONGCLICK = "player_longclick"
     const val PLAYER_DOUBLETAP_SEEK = "player_doubletap_seek"
     const val PLAYER_SWIPE_SEEK = "player_swipe_seek"
+    /**
+     * 左右滑动调进度的灵敏度倍率（存字符串档位，如 "1.0"）。
+     *
+     * 反馈 #94a：手表 dpi 降低后，横滑一点点就会快进很多。换算与档位表统一在
+     * `activity/player/PlayerSeekPolicies.kt` 的 `PlayerSwipeSeekScalePolicy` 里；
+     * 播放页每次横滑重读，设置页改完返回即生效。
+     */
+    const val PLAYER_SWIPE_SEEK_SCALE = "player_swipe_seek_scale"
     /** 播放页触摸锁定的首次提示是否已经展示过（纯记账，不出现在设置页）。 */
     const val PLAYER_LOCK_HINT_SHOWN = "player_lock_hint_shown"
     /** 双击有缩放时优先复位；保留旧键兼容已保存的开关，不再还原屏幕方向。 */
@@ -156,6 +190,23 @@ object SettingsKeys {
      * 「自动跳过片头片尾」的首次引导是否已经弹过。纯记账用，不出现在设置页。
      */
     const val PLAYER_SKIP_OP_ED_GUIDED = "player_skip_op_ed_guided"
+    /**
+     * 片头片尾跳过档位（26.11.06 起）：0=关、1=仅片头、2=仅片尾、3=都跳、4=询问。
+     * 旧键 [PLAYER_SKIP_OP_ED] 只在迁移时读（true → 3），判据与迁移见 `player/SkipOpEdPolicy.kt`。
+     */
+    const val PLAYER_SKIP_OP_ED_MODE = "player_skip_op_ed_mode"
+    /**
+     * 长按后上下划切换上一条/下一条视频，默认开。判据见 `player/LongPressSwitchPolicy.kt`。
+     */
+    const val PLAYER_LONGPRESS_SWITCH = "player_longpress_switch"
+    /**
+     * 长按倍速提示的尺寸百分比（80/100/120/150），默认 100。
+     */
+    const val PLAYER_LONGPRESS_HINT_SCALE = "player_longpress_hint_scale"
+    /**
+     * 自己发的弹幕加边框（按登录 mid 的 CRC32 比对，只比自己的 hash），默认开。
+     */
+    const val PLAYER_DANMAKU_SELF_BORDER = "player_danmaku_self_border"
     const val PLAYER_DANMAKU_ALLOW_OVERLAP = "player_danmaku_allowoverlap"
     const val PLAYER_DANMAKU_MERGE_DUPLICATE = "player_danmaku_mergeduplicate"
     const val PLAYER_DANMAKU_FORCE_R2L = "player_danmaku_forceR2L"
@@ -176,10 +227,31 @@ object SettingsKeys {
      * 改这里就顺手改布局（XML 里读不到 Kotlin 常量，只能两处一起看）。
      */
     const val PLAYER_SUBTITLE_SIZE_DEFAULT = 11
+    /**
+     * 旧的「显示××按钮」开关，26.11.06 起**已停用**。
+     *
+     * 按钮显不显示改由「播放界面布局」（[PLAYER_UI_LAYOUT]）决定：放没放进槽位就是开关本身。
+     * 这几个键只为「不误删用户存档」而留着（不读、不写、不迁移），不要再接线到新代码。
+     */
     const val PLAYER_UI_SHOW_ROTATE_BTN = "player_ui_showRotateBtn"
     const val PLAYER_UI_SHOW_DANMAKU_BTN = "player_ui_showDanmakuBtn"
     const val PLAYER_UI_SHOW_QUALITY_BTN = "player_ui_showQualityBtn"
     const val PLAYER_UI_SHOW_PAGE_BTN = "player_ui_showPageBtn"
+    /** 已停用，见上面 [PLAYER_UI_SHOW_ROTATE_BTN] 的说明。 */
+    const val PLAYER_UI_SHOW_LOCK_BTN = "player_ui_showLockBtn"
+
+    /** 播放界面按钮的自定义布局（分隔符串，格式见 `player/PlayerUiLayout.kt`）。 */
+    const val PLAYER_UI_LAYOUT = "player_ui_layout"
+
+    /**
+     * 播放页顶部那一条（标题 / 电量 / 时钟）的显示开关。
+     *
+     * 26.11.06 新加：此前标题栏是**一直显示**、没有开关可调，所以假播放器点「标题栏」时
+     * 没有设置可弹——现在补上这三项，播放页读它们（默认全开，行为与以前一致）。
+     */
+    const val PLAYER_UI_SHOW_TITLE = "player_ui_show_title"
+    const val PLAYER_UI_SHOW_BATTERY = "player_ui_show_battery"
+    const val PLAYER_UI_SHOW_CLOCK = "player_ui_show_clock"
     const val PLAYER_INTERACTION_CHOICE_SIZE = "player_interaction_choice_size"
     /**
      * 「互动选项字体大小」的默认值（sp）。

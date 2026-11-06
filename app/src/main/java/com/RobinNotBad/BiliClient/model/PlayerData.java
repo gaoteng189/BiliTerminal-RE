@@ -21,9 +21,37 @@ public class PlayerData implements Parcelable {
     public int[] qnValueList;
     public long aid;
     public long cid;
+    /**
+     * **当前登录账号**的 mid，不是视频作者。
+     *
+     * <p>它只用来回答「我是谁」：直播弹幕握手包的 {@code uid}、以及各入口
+     * 「有没有登录态」的粗判据（如 {@code JumpToPlayerActivity.reportProgressAsync}）。
+     *
+     * <p>**别拿它当 UP 主**：连播「按 UP 主投稿续播」要的是这条视频的作者，
+     * 见 {@link #uploaderMid}。历史上两者共用一个字段，`VideoInfo.toPlayerData` 往这里
+     * 塞登录 mid，于是连播拉到的是登录账号自己的投稿（26.11.06 修）。
+     */
     public long mid;
+    /**
+     * 这条视频的 UP 主 mid（连播「按 UP 主投稿续播」用）。
+     *
+     * <p>由 {@code VideoInfo.toPlayerData} 从 {@code staff[0]}（联合投稿取第一作者）填，
+     * 随 Intent / 播放会话哨兵一路传到播放器。{@code 0} 表示入口不知道作者
+     * （本地缓存、番剧、旧版会话），播放器会按 aid 现查一次
+     * （{@code PlayerActivity#resolveUploaderMid}），查不到就不提供 UP 主连播。
+     */
+    public long uploaderMid = 0;
     public int progress = 0;
     public long cidHistory = 0;
+    /**
+     * 服务端 `last_play_time` 的原值（毫秒，未做单位换算/合理性过滤前的数字）。
+     *
+     * <p>**为什么需要它**（反馈 #83）：`progress` 只在 `last_play_cid == cid` 时才会采纳
+     * `last_play_time`（见 `PlayerApi.adoptLastPlayTime`），所以 `progress == 0` 分不清
+     * 「从来没看过」和「上次看的是别的分P」。"要不要续到上次那个分P"必须看这个原值 &gt; 0，
+     * 判据收敛在 `MultiPageResumePolicy.resumePageIndex`。
+     */
+    public long lastPlayTimeMs = 0;
     // 番剧（PGC）专用字段。投稿视频的观看进度走 x/v2/history/report，只有 aid/cid 两个维度；
     // 番剧必须走心跳接口并带上 epid/sid/sub_type，否则观看记录与续播进度都不会被服务端更新——
     // 表现就是"在终端里看的番剧，历史里不出现，下次还得从头播"。
@@ -78,6 +106,10 @@ public class PlayerData implements Parcelable {
         cid = in.readLong();
         mid = in.readLong();
         progress = in.readInt();
+        // cidHistory / lastPlayTimeMs 必须一起序列化：多P 视频「续到上次那个P」要跟着 Intent
+        // 传到 MultiPageActivity（视频详情页 → 选集页），漏掉的话那边拿到的永远是 0。
+        cidHistory = in.readLong();
+        lastPlayTimeMs = in.readLong();
         type = in.readInt();
         timeStamp = in.readLong();
         pagenames = in.createStringArrayList();
@@ -92,6 +124,8 @@ public class PlayerData implements Parcelable {
         if (liveUrlCandidates == null) liveUrlCandidates = new ArrayList<>();
         virtualCollection = in.readInt() != 0;
         enterableInfo = in.readParcelable(VideoInfo.class.getClassLoader());
+        // 新字段一律追加在末尾：read/write 顺序必须严格一致，插在中间会把后面所有字段读错位
+        uploaderMid = in.readLong();
         // dashData不序列化，下载时会重新获取
     }
 
@@ -124,6 +158,8 @@ public class PlayerData implements Parcelable {
         dest.writeLong(cid);
         dest.writeLong(mid);
         dest.writeInt(progress);
+        dest.writeLong(cidHistory);
+        dest.writeLong(lastPlayTimeMs);
         dest.writeInt(type);
         dest.writeLong(timeStamp);
         dest.writeStringList(pagenames);
@@ -136,6 +172,8 @@ public class PlayerData implements Parcelable {
         dest.writeStringList(liveUrlCandidates);
         dest.writeInt(virtualCollection ? 1 : 0);
         dest.writeParcelable(enterableInfo, flags);
+        // 新字段一律追加在末尾（见构造函数里的同一处注释）
+        dest.writeLong(uploaderMid);
         // dashData不序列化，下载时会重新获取
     }
 

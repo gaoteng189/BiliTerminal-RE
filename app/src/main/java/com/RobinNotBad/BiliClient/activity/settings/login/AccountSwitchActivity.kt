@@ -123,6 +123,7 @@ class AccountSwitchActivity : BaseActivity() {
         }
 
         addNewAccountCard()
+        addImportCard()
     }
 
     private fun addEmptyHint() {
@@ -146,6 +147,7 @@ class AccountSwitchActivity : BaseActivity() {
 
         accountList.addView(card)
         addNewAccountCard()
+        addImportCard()
     }
 
     private fun createAccountCard(account: AccountManager.AccountInfo): View {
@@ -196,8 +198,13 @@ class AccountSwitchActivity : BaseActivity() {
         card.setOnClickListener {
             if (isCurrent) {
                 MsgUtil.showMsg(getString(R.string.msg_accountswitchactivity_001))
+            } else if (!AccountManager.switchToAccount(account)) {
+                // 26.11.06 起 switchToAccount 走 applyCredentials：mid 与 Cookie 里的 DedeUserID
+                // 对不上、或快照 Cookie 为空时**整笔拒绝**（防止 A 的 Cookie 配 B 的 mid）。
+                // 原实现忽略返回值，照样提示「已切换到 X」再跳启动页 —— 用户看到的是「切了等于没切、
+                // 一直加载」，也就是升级后被报成「掉登录 / 所有账号都登不上」的那一类。
+                MsgUtil.showMsg(getString(R.string.msg_accountswitchactivity_004))
             } else {
-                AccountManager.switchToAccount(account)
                 val displayName = if (savedName != null && savedName.isNotEmpty()) savedName else "UID:" + account.mid
                 MsgUtil.showMsg(getString(R.string.msg_account_switched, displayName))
                 val intent = Intent(this@AccountSwitchActivity, SplashActivity::class.java)
@@ -208,7 +215,11 @@ class AccountSwitchActivity : BaseActivity() {
         }
 
         card.setOnLongClickListener {
-            if (accountsCanBeRemoved()) {
+            // 当前账号不能删：它的凭证还在 SP 里，删了下次 saveCurrentAccount() 又会把它加回来
+            // （表现就是「删了又出现」），而且会把用户直接踢成未登录却没有任何提示。
+            if (isCurrent) {
+                MsgUtil.showMsg(getString(R.string.msg_accountswitchactivity_003))
+            } else if (accountsCanBeRemoved()) {
                 val displayName = if (savedName != null && savedName.isNotEmpty()) savedName else "UID:" + account.mid
                 TerminalDialog.confirm(
                     context = this,
@@ -216,8 +227,11 @@ class AccountSwitchActivity : BaseActivity() {
                     message = "确定要删除账号 $displayName 吗？\n删除后需重新登录才能恢复。",
                     confirmText = "删除"
                 ) {
-                    AccountManager.removeAccount(account.mid)
-                    MsgUtil.showMsg(getString(R.string.msg_accountswitchactivity_002))
+                    if (AccountManager.removeAccount(account.mid)) {
+                        MsgUtil.showMsg(getString(R.string.msg_accountswitchactivity_002))
+                    } else {
+                        MsgUtil.showMsg(getString(R.string.msg_accountswitchactivity_003))
+                    }
                     refreshAccountList()
                 }.show()
             }
@@ -269,6 +283,40 @@ class AccountSwitchActivity : BaseActivity() {
         card.setOnClickListener {
             val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
+        }
+
+        accountList.addView(card)
+    }
+
+    /**
+     * 「导入账号数据」入口。
+     *
+     * <p>特殊登录页在设置里只在「本机未登录且 SDK 太低」时才可达，换机搬家的人根本找不到；
+     * 这里给一条固定入口，粘贴一份多账号 JSON 就能把别的设备的账号全搬过来。
+     * 导入只写账号列表、不切当前账号，导完回到本页点卡片切换。
+     */
+    private fun addImportCard() {
+        val card = MaterialCardView(this)
+        card.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        val text = TextView(this)
+        text.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            (35 * resources.displayMetrics.density).toInt()
+        )
+        text.setPadding(16, 0, 16, 0)
+        text.gravity = Gravity.CENTER_VERTICAL
+        text.text = getString(R.string.text_account_import)
+        text.textAlignment = View.TEXT_ALIGNMENT_TEXT_START
+        text.textSize = 13f
+        text.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.arrow_forward, 0)
+        card.addView(text)
+
+        card.setOnClickListener {
+            startActivity(Intent(this, SpecialLoginActivity::class.java))
         }
 
         accountList.addView(card)

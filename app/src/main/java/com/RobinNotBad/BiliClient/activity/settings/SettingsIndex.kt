@@ -48,8 +48,29 @@ object SettingsIndex {
         list += Entry("选择播放器", "切换播放器、视频清晰度") { a ->
             a.startActivity(Intent(a, SettingPlayerChooseActivity::class.java))
         }
+        list += Entry("播放器界面", "调播放器上的按钮与它们的设置") { a ->
+            a.startActivity(Intent(a, SettingPlayerUiActivity::class.java))
+        }
         list += Entry("清晰度", "设置默认播放清晰度") { a ->
             a.startActivity(Intent(a, SettingQualityActivity::class.java))
+        }
+        list += Entry(
+            BiliTerminal.context!!.getString(R.string.net_quality_wifi_title),
+            BiliTerminal.context!!.getString(R.string.net_quality_wifi_desc)
+        ) { a ->
+            a.startActivity(Intent(a, SettingQualityActivity::class.java))
+        }
+        list += Entry(
+            BiliTerminal.context!!.getString(R.string.net_quality_mobile_title),
+            BiliTerminal.context!!.getString(R.string.net_quality_mobile_desc)
+        ) { a ->
+            a.startActivity(Intent(a, SettingQualityActivity::class.java))
+        }
+        list += Entry(
+            BiliTerminal.context!!.getString(R.string.storage_entry_title),
+            BiliTerminal.context!!.getString(R.string.storage_entry_desc)
+        ) { a ->
+            a.startActivity(Intent(a, StorageActivity::class.java))
         }
         list += Entry("内置播放器设置", "内置播放器的播放、弹幕、字幕与界面") { a ->
             a.startActivity(Intent(a, SettingTerminalPlayerActivity::class.java))
@@ -130,6 +151,11 @@ object SettingsIndex {
         }
         list += Entry("玻璃质感", "卡片与按钮半透明，让光晕透进来") { a -> openGroup(a, GROUP_APPEARANCE, "外观设置", "玻璃质感") }
         list += Entry("卡片圆角", "调整卡片与按钮的圆角") { a -> openGroup(a, GROUP_APPEARANCE, "外观设置", "卡片圆角") }
+        // 批次 3（26.11.06）：背景图三项。highlight 用页内 SettingSection.name，
+        // 分别是标题「背景图」/ 导航「选择背景图」/ 两个 listChoose 的名字。
+        list += Entry("背景图", "给页面铺一张自己的图片") { a -> openGroup(a, GROUP_APPEARANCE, "外观设置", "背景图") }
+        list += Entry("背景图适配方式", "填满裁切还是完整显示") { a -> openGroup(a, GROUP_APPEARANCE, "外观设置", "适配方式") }
+        list += Entry("背景图遮罩强度", "遮罩越强文字越清楚") { a -> openGroup(a, GROUP_APPEARANCE, "外观设置", "遮罩强度") }
         list += Entry("横屏模式", "启用横屏显示") { a -> openGroup(a, "layout", "布局适配", "横屏模式") }
         list += Entry("开屏文字", "自定义开屏显示文字") { a -> openGroup(a, "ui", "界面与外观", "开屏文字") }
         list += Entry("文字跑马灯", "文字跑马灯效果") { a -> openGroup(a, "ui", "界面与外观", "文字跑马灯") }
@@ -183,8 +209,12 @@ object SettingsIndex {
         list += Entry("追番更新提醒", "追的番剧有新一集时在通知栏提醒") { a -> openGroup(a, GROUP_NOTIFY, "通知设置", "追番更新提醒") }
 
         addLeafItems(list, "内置播放器设置", SettingTerminalPlayerActivity::class.java, listOf(
-            "长按倍速", "双击快进快退", "有缩放时，双击优先恢复缩放", "快进快退秒数",
+            // 组标题（页内按七组带标题展开，点组名直接滚到那一组开头）
+            "手势与滑动", "画面与显示", "渲染与解码", "界面按钮",
+            "长按倍速", "长按倍速档位", "双击快进快退", "有缩放时，双击优先恢复缩放", "快进快退秒数",
             "后台/熄屏继续播放",
+            // 手势组里此前漏收录的三项（26.11.06 补）：名字与页内 SettingSection.name 严格一致
+            "左右滑动控制进度", "滑动调进度灵敏度",
             // 「播放默认值」分组：开播时自动应用，各项名字与页内 SettingSection.name 严格一致（搜索靠名字定位）
             "播放默认值", "弹幕", "听视频模式", "循环播放", "自动连播", "倍速", "字幕", "屏幕方向",
             "从历史位置播放", "显示实时人数",
@@ -193,9 +223,17 @@ object SettingsIndex {
             // 关键词必须与页内 SettingSection.name 严格一致，否则搜索命中定位不到。
             "显示高能进度条", "自动跳过片头片尾", "弹幕允许重叠", "合并重复弹幕", "强制为滚动弹幕",
             "显示直播弹幕发送者", "弹幕最大行数", "弹幕字号大小", "弹幕不透明度", "弹幕速度",
+            // 弹幕组里此前漏收录的三项（26.11.06 补）
+            "弹幕数量保护", "直播弹幕停留倍率", "弹幕缓存上限",
+            // 批次 3（26.11.06）新增的三项：名字必须与页内 SettingSection.name 严格一致
+            "本人弹幕边框", "长按上下划切换视频", "长按倍速提示尺寸",
             "自动弹出字幕选择", "允许仅AI字幕", "字幕校准", "字幕字号大小",
-            "显示旋转按钮", "显示弹幕按钮", "显示清晰度按钮", "显示分P按钮", "互动选项字体大小"
+            "互动选项字体大小",
+            // 顶部标题栏三件套（26.11.06 新增，名字与页内 SettingSection.name 严格一致）
+            "显示标题", "显示电量", "显示时钟"
         ))
+        // 注：原来「显示旋转/弹幕/清晰度/分P/锁定按钮」五个开关已在 26.11.06 删除，
+        // 按钮显不显示改由「播放界面布局」决定（放没放进槽位就是开关），所以这里不再收录。
 
         // ---- 开发者工具（仅 Debug）----
         // 用 BuildConfig.DEBUG（编译期常量）而不是 BiliTerminal.isDebugBuild()（运行期判断）：
